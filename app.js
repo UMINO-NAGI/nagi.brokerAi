@@ -31,6 +31,9 @@ const els = {
   userName: document.getElementById("user-name"),
   userAvatar: document.getElementById("user-avatar"),
   signOutBtn: document.getElementById("sign-out-btn"),
+  // NEW: login warning
+  loginWarning: document.getElementById("login-warning"),
+  loginWarningText: document.getElementById("login-warning-text"),
   // fields
   fieldType: document.getElementById("property-type"),
   fieldHeadline: document.getElementById("headline"),
@@ -76,8 +79,22 @@ let currentUser = auth.getCurrentUser();
    Exposed globally so Google Identity Services can call it.
 */
 window.handleGoogleCredential = (response) => {
-  if (!response || !response.credential) return;
-  auth.handleGoogleCredential(response.credential);
+  try {
+    // Accept both the full response object and a raw credential string
+    const credential =
+      response && typeof response === "object"
+        ? response.credential
+        : response;
+
+    if (!credential || typeof credential !== "string") {
+      console.warn("Google credential callback without valid token", response);
+      return;
+    }
+
+    auth.handleGoogleCredential(credential);
+  } catch (err) {
+    console.error("Error handling Google credential", err);
+  }
 };
 
 /* AUTH HANDLING */
@@ -99,9 +116,17 @@ function updateAuthUI() {
     } else {
       els.userAvatar.classList.add("hidden");
     }
+    // hide login warning when authenticated
+    if (els.loginWarning) {
+      els.loginWarning.classList.add("hidden");
+    }
   } else {
     els.authArea.classList.remove("hidden");
     els.userInfo.classList.add("hidden");
+    // show login warning when not authenticated
+    if (els.loginWarning) {
+      els.loginWarning.classList.remove("hidden");
+    }
   }
 
   // Only allow generations when user is logged in
@@ -117,16 +142,32 @@ function updateQuotaUI() {
     els.quotaCount.style.color = "#4ade80";
     if (currentLang === "pt") {
       els.quotaLabel.textContent = "Plano profissional ativo";
+      if (els.loginWarningText) {
+        els.loginWarningText.textContent =
+          "Plano profissional ativo. Você já pode gerar descrições.";
+      }
     } else {
       els.quotaLabel.textContent = "Pro plan active";
+      if (els.loginWarningText) {
+        els.loginWarningText.textContent =
+          "Pro plan active. You can start generating descriptions.";
+      }
     }
   } else {
     els.quotaCount.textContent = String(remaining);
     els.quotaCount.style.color = remaining === 0 ? "#fca5a5" : "#fb923c";
     if (currentLang === "pt") {
       els.quotaLabel.textContent = "Gerações gratuitas restantes:";
+      if (!currentUser && els.loginWarningText) {
+        els.loginWarningText.textContent =
+          "Inicie sessão com o Google para começar a gerar descrições.";
+      }
     } else {
       els.quotaLabel.textContent = "Free generations left:";
+      if (!currentUser && els.loginWarningText) {
+        els.loginWarningText.textContent =
+          "Sign in with Google to start generating descriptions.";
+      }
     }
   }
 }
