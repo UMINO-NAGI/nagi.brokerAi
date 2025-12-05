@@ -36,6 +36,7 @@ const els = {
   signOutBtn: document.getElementById("sign-out-btn"),
   loginWarning: document.getElementById("login-warning"),
   loginWarningText: document.getElementById("login-warning-text"),
+  googleLoginBtn: document.getElementById("google-login-btn"),
   
   // Campos do formulário
   fieldType: document.getElementById("property-type"),
@@ -74,13 +75,8 @@ let isGenerating = false;
 let formAutoSaveTimer = null;
 
 // ==================== SISTEMA DE CÓDIGOS COM SENHA ====================
-const ADMIN_PASSWORD = "948399692Se@"; // SENHA PARA PAINEL ADMINISTRATIVO
-let CODIGOS_ATIVOS = [
-  // Exemplos de códigos (você pode adicionar mais ou gerar via painel admin)
-  "123456",
-  "654321",
-  "789012"
-];
+const ADMIN_PASSWORD = "948399692Se@";
+let CODIGOS_ATIVOS = ["123456", "654321", "789012"];
 
 // ==================== FUNÇÕES UTILITÁRIAS ====================
 function mostrarStatus(texto, erro = false) {
@@ -98,23 +94,83 @@ function mostrarStatus(texto, erro = false) {
   }
 }
 
-// ==================== GOOGLE AUTH CALLBACK ====================
-window.handleGoogleCredential = (response) => {
-  try {
-    const credential = response?.credential || response;
-    if (!credential) {
-      mostrarStatus("Erro: Credencial do Google não recebida", true);
+// ==================== AUTENTICAÇÃO SIMPLIFICADA ====================
+function inicializarGoogleLogin() {
+  if (!els.googleLoginBtn) return;
+  
+  els.googleLoginBtn.addEventListener("click", () => {
+    if (typeof google === 'undefined') {
+      mostrarStatus("Google Sign-In não carregado. Recarregue a página.", true);
       return;
     }
     
-    auth.handleGoogleCredential(credential);
-  } catch (error) {
-    console.error("Erro no login Google:", error);
-    mostrarStatus("Erro no login com Google", true);
-  }
-};
+    const clientId = "54495922404-90dpm3542ktljge07ntttaa6vdt6ffco.apps.googleusercontent.com";
+    
+    // Criar um iframe para o login do Google
+    const googleLoginWindow = document.createElement('div');
+    googleLoginWindow.id = 'google-login-window';
+    googleLoginWindow.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    
+    googleLoginWindow.innerHTML = `
+      <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
+        <h3 style="color: #333; margin-bottom: 20px;">Login com Google</h3>
+        <div id="google-login-button"></div>
+        <button id="cancel-google-login" style="margin-top: 20px; padding: 10px 20px; background: #ccc; border: none; border-radius: 5px; cursor: pointer;">
+          Cancelar
+        </button>
+      </div>
+    `;
+    
+    document.body.appendChild(googleLoginWindow);
+    
+    // Configurar Google Sign-In
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: (response) => {
+        console.log("Google login response:", response);
+        if (response.credential) {
+          auth.handleGoogleCredential(response.credential);
+          document.body.removeChild(googleLoginWindow);
+          mostrarStatus("Login realizado com sucesso!");
+        }
+      },
+      context: 'signin',
+      ux_mode: 'popup',
+      auto_select: false
+    });
+    
+    // Renderizar botão do Google
+    google.accounts.id.renderButton(
+      document.getElementById('google-login-button'),
+      { 
+        theme: 'outline', 
+        size: 'large',
+        width: 300,
+        text: 'signin_with',
+        shape: 'rectangular',
+        logo_alignment: 'left'
+      }
+    );
+    
+    // Botão cancelar
+    document.getElementById('cancel-google-login').addEventListener('click', () => {
+      document.body.removeChild(googleLoginWindow);
+    });
+  });
+}
 
-// ==================== AUTENTICAÇÃO ====================
+// Listener de mudança de autenticação
 auth.onChange((user) => {
   currentUser = user;
   atualizarInterfaceAuth();
@@ -141,7 +197,10 @@ function atualizarInterfaceAuth() {
     
     if (els.userAvatar && currentUser.avatar) {
       els.userAvatar.src = currentUser.avatar;
+      els.userAvatar.alt = currentUser.name;
       els.userAvatar.classList.remove("hidden");
+    } else {
+      els.userAvatar.classList.add("hidden");
     }
     
     if (els.loginWarning) {
@@ -172,7 +231,6 @@ function atualizarInterfaceAuth() {
       els.copyAllBtn.disabled = true;
     }
     
-    // Atualizar texto do warning
     if (els.loginWarningText) {
       els.loginWarningText.textContent = currentLang === "pt" 
         ? "Inicie sessão com o Google para gerar descrições."
@@ -263,6 +321,15 @@ function aplicarIdioma(lang) {
     if (els.tabMedium) els.tabMedium.textContent = "Média";
     if (els.tabLong) els.tabLong.textContent = "Longa";
     if (els.signOutBtn) els.signOutBtn.textContent = "Sair";
+    if (els.googleLoginBtn) els.googleLoginBtn.innerHTML = `
+      <svg style="width:20px;height:20px;margin-right:8px;" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Entrar com Google
+    `;
     if (els.upgradeBtn) els.upgradeBtn.textContent = "🛒 Comprar Plano Profissional";
     if (els.activateCodeBtn) els.activateCodeBtn.textContent = "✅ Ativar com Código";
     if (els.closePaywallBtn) els.closePaywallBtn.textContent = "Fechar";
@@ -311,6 +378,15 @@ function aplicarIdioma(lang) {
     if (els.tabMedium) els.tabMedium.textContent = "Standard";
     if (els.tabLong) els.tabLong.textContent = "Extended";
     if (els.signOutBtn) els.signOutBtn.textContent = "Sign out";
+    if (els.googleLoginBtn) els.googleLoginBtn.innerHTML = `
+      <svg style="width:20px;height:20px;margin-right:8px;" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Sign in with Google
+    `;
     if (els.upgradeBtn) els.upgradeBtn.textContent = "🛒 Buy Professional Plan";
     if (els.activateCodeBtn) els.activateCodeBtn.textContent = "✅ Activate with Code";
     if (els.closePaywallBtn) els.closePaywallBtn.textContent = "Close";
@@ -339,7 +415,6 @@ function aplicarIdioma(lang) {
 
 // ==================== ABAS ====================
 function clicarAba(tab) {
-  // Atualizar botões das abas
   els.tabButtons.forEach((btn) => {
     if (btn.dataset.tab === tab) {
       btn.classList.add("active");
@@ -348,7 +423,6 @@ function clicarAba(tab) {
     }
   });
   
-  // Mostrar conteúdo da aba selecionada
   Object.keys(els.outputs).forEach((key) => {
     if (els.outputs[key]) {
       if (key === tab) {
@@ -378,7 +452,6 @@ function coletarDadosFormulario() {
 }
 
 function validarDadosFormulario(dados) {
-  // Verificar se há pelo menos um campo preenchido
   return (
     dados.type ||
     dados.headline.trim() ||
@@ -446,7 +519,6 @@ function configurarAutoSave() {
 
 function carregarDadosDemo() {
   if (localStorage.getItem("nagi_first_visit") !== "completed") {
-    // Carregar dados de exemplo
     if (els.fieldType) els.fieldType.value = "apartamento";
     if (els.fieldHeadline) els.fieldHeadline.value = currentLang === "pt" 
       ? "Luxuoso T3 com vista mar e varanda ampla" 
@@ -472,13 +544,10 @@ function carregarDadosDemo() {
 async function gerarConteudo() {
   if (isGenerating) return;
   
-  // Verificar permissão
   if (!verificarPermissaoGeracao()) return;
   
-  // Coletar dados do formulário
   const formData = coletarDadosFormulario();
   
-  // Validar dados
   if (!validarDadosFormulario(formData)) {
     mostrarStatus(
       currentLang === "pt"
@@ -489,32 +558,25 @@ async function gerarConteudo() {
     return;
   }
   
-  // Mostrar estado de carregamento
   isGenerating = true;
   const originalBtnText = els.generateBtn.textContent;
   els.generateBtn.textContent = currentLang === "pt" ? "Gerando..." : "Generating...";
   els.generateBtn.disabled = true;
   
   try {
-    // Gerar descrições
     const results = generateDescriptions(formData, currentLang);
     
-    // Atualizar interface com resultados
     if (els.outputs.short) els.outputs.short.textContent = results.short || "";
     if (els.outputs.medium) els.outputs.medium.textContent = results.medium || "";
     if (els.outputs.long) els.outputs.long.textContent = results.long || "";
     
-    // Registrar uso e atualizar quota
     billing.registerGeneration(currentUser);
     atualizarQuotaUI();
     
-    // Mostrar primeira aba
     clicarAba("short");
     
-    // Salvar dados do formulário
     salvarFormulario();
     
-    // Mostrar mensagem de sucesso
     mostrarStatus(
       currentLang === "pt"
         ? "✅ Descrições geradas com sucesso!"
@@ -530,7 +592,6 @@ async function gerarConteudo() {
       true
     );
     
-    // Mostrar mensagem de erro nas saídas
     const errorMessage = currentLang === "pt"
       ? "Ocorreu um erro ao gerar as descrições. Por favor, verifique os dados inseridos e tente novamente."
       : "An error occurred while generating descriptions. Please check your input and try again.";
@@ -540,7 +601,6 @@ async function gerarConteudo() {
     if (els.outputs.long) els.outputs.long.textContent = errorMessage;
     
   } finally {
-    // Restaurar estado do botão
     isGenerating = false;
     els.generateBtn.textContent = originalBtnText;
     els.generateBtn.disabled = !currentUser;
@@ -555,11 +615,7 @@ async function copiarTodoConteudo() {
   const medium = els.outputs.medium.textContent.trim();
   const long = els.outputs.long.textContent.trim();
   
-  const combined = [
-    short,
-    medium,
-    long
-  ]
+  const combined = [short, medium, long]
     .filter(text => text.length > 0)
     .join("\n\n---\n\n");
   
@@ -581,7 +637,6 @@ async function copiarTodoConteudo() {
         : "✅ Content copied to clipboard!"
     );
   } catch (error) {
-    // Fallback para navegadores mais antigos
     const textArea = document.createElement("textarea");
     textArea.value = combined;
     textArea.style.position = "fixed";
@@ -620,7 +675,6 @@ function mostrarPaywall() {
   if (els.paywallOverlay) {
     els.paywallOverlay.classList.remove("hidden");
     document.body.style.overflow = "hidden";
-    // Limpar campo de código
     if (els.verificationCodeInput) {
       els.verificationCodeInput.value = "";
     }
@@ -647,10 +701,8 @@ function verificarCodigoAtivacao() {
     return;
   }
   
-  // Verificar se o código está na lista
   const index = CODIGOS_ATIVOS.indexOf(codigo);
   if (index !== -1) {
-    // Código válido - remover da lista e ativar plano
     CODIGOS_ATIVOS.splice(index, 1);
     billing.activateMonthlyPlan(currentUser);
     atualizarQuotaUI();
@@ -677,9 +729,7 @@ function abrirLinkPagamento() {
     return;
   }
   
-  // SUBSTITUA ESTE LINK PELO SEU LINK DE PAGAMENTO REAL
   const paymentLink = "https://www.paypal.com/ncp/payment/YBLWPYKEZBBZC";
-  
   window.open(paymentLink, "_blank");
   
   mostrarStatus(
@@ -689,9 +739,8 @@ function abrirLinkPagamento() {
   );
 }
 
-// ==================== PAINEL ADMINISTRATIVO PROTEGIDO ====================
+// ==================== PAINEL ADMINISTRATIVO ====================
 function mostrarPainelAdmin() {
-  // Pedir senha primeiro
   const passwordModal = document.createElement("div");
   passwordModal.className = "overlay";
   passwordModal.style.zIndex = "1002";
@@ -754,7 +803,6 @@ function mostrarPainelAdmin() {
 }
 
 function mostrarDashboardAdmin() {
-  // Gerar novos códigos
   const newCodes = [];
   for (let i = 0; i < 5; i++) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -826,7 +874,6 @@ function mostrarDashboardAdmin() {
   
   document.body.appendChild(dashboard);
   
-  // Event listeners do dashboard
   document.getElementById("copy-new-codes").addEventListener("click", () => {
     navigator.clipboard.writeText(newCodes.join('\n'));
     mostrarStatus("✅ Novos códigos copiados!");
@@ -834,7 +881,7 @@ function mostrarDashboardAdmin() {
   
   document.getElementById("generate-more").addEventListener("click", () => {
     document.body.removeChild(dashboard);
-    mostrarDashboardAdmin(); // Recarregar com novos códigos
+    mostrarDashboardAdmin();
   });
   
   document.getElementById("clear-all-codes").addEventListener("click", () => {
@@ -872,7 +919,7 @@ function configurarEventListeners() {
     });
   }
   
-  // Formulário - prevenir comportamento padrão
+  // Formulário
   if (els.form) {
     els.form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -905,7 +952,7 @@ function configurarEventListeners() {
     els.closePaywallBtn.addEventListener("click", esconderPaywall);
   }
   
-  // Permitir ativar código com Enter
+  // Ativar código com Enter
   if (els.verificationCodeInput) {
     els.verificationCodeInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
@@ -942,7 +989,7 @@ function configurarEventListeners() {
     });
   });
   
-  // Atalho para painel admin (Ctrl+Alt+Shift+A)
+  // Atalho para painel admin
   document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.altKey && e.shiftKey && e.key === "A") {
       e.preventDefault();
@@ -981,10 +1028,13 @@ function inicializar() {
   // Configurar aba inicial
   clicarAba("short");
   
+  // Configurar Google Login
+  inicializarGoogleLogin();
+  
   // Configurar auto-save do formulário
   configurarAutoSave();
   
-  // Carregar dados demo (primeira visita)
+  // Carregar dados demo
   carregarDadosDemo();
   
   // Carregar dados salvos
@@ -997,4 +1047,8 @@ function inicializar() {
 }
 
 // ==================== INICIAR APLICAÇÃO ====================
-document.addEventListener("DOMContentLoaded", inicializar);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', inicializar);
+} else {
+  inicializar();
+}

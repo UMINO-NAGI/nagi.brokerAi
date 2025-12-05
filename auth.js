@@ -128,7 +128,7 @@ function isAuthenticated() {
     return !!currentUser;
 }
 
-// Expor para uso global
+// Expor função globalmente
 window.handleGoogleCredential = handleGoogleCredential;
 
 export const auth = {
