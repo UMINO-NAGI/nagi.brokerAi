@@ -1,320 +1,329 @@
-function rand(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+function getRandomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function formatList(text) {
-  if (!text || typeof text !== "string") return "";
-  return text
-    .split(/[;,.\\n]/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .join(", ");
-}
-
-function baseData(raw) {
-  if (!raw || typeof raw !== "object") raw = {};
-  
-  const {
-    type = "imóvel",
-    headline = "",
-    bedrooms = 0,
-    bathrooms = 0,
-    kitchens = 0,
-    parking = 0,
-    area = 0,
-    price = "",
-    address = "",
-    locationContext = "",
-    highlights = "",
-    extras = "",
-    audience = "geral",
-    tone = "encantador"
-  } = raw;
-
-  const details = [];
-
-  if (bedrooms > 0) details.push(`${bedrooms} quarto${bedrooms > 1 ? "s" : ""}`);
-  if (bathrooms > 0) details.push(`${bathrooms} banheiro${bathrooms > 1 ? "s" : ""}`);
-  if (kitchens > 0) details.push(`${kitchens} cozinha${kitchens > 1 ? "s" : ""}`);
-  if (parking > 0) details.push(`${parking} vaga${parking > 1 ? "s" : ""} de garagem`);
-  if (area > 0) details.push(`${area} m² de área`);
-
-  const formattedHighlights = formatList(highlights);
-  const formattedExtras = extras.trim();
-  const formattedLocation = address || locationContext || "";
-
-  return {
-    fullType: type,
-    headline: headline.trim(),
-    details,
-    detailsJoined: details.join(" · "),
-    price: price.trim(),
-    formattedHighlights,
-    formattedExtras,
-    formattedLocation,
-    audience,
-    tone
-  };
-}
-
-/* PORTUGUÊS */
-function generateShortPt(d) {
-  const intros = [
-    `✨ Encante-se com este ${d.fullType}${d.headline ? `: ${d.headline}` : ""}.`,
-    `🏡 Apresentamos um ${d.fullType}${d.headline ? ` – ${d.headline}` : ""} preparado para surpreender.`,
-    `🌟 Uma oportunidade única de ${d.fullType}${d.headline ? `: ${d.headline}` : ""}.`
-  ];
-
-  const detailSegment = d.detailsJoined
-    ? ` Com ${d.detailsJoined}${d.formattedLocation ? `, em ${d.formattedLocation}` : ""}.`
-    : d.formattedLocation
-    ? ` Localizado em ${d.formattedLocation}.`
-    : "";
-
-  const highlightSegment = d.formattedHighlights
-    ? ` Destaques: ${d.formattedHighlights}.`
-    : "";
-
-  const priceSegment = d.price ? ` Valor: ${d.price}.` : "";
-
-  return `${rand(intros)}${detailSegment}${highlightSegment}${priceSegment}`.trim();
-}
-
-function generateMediumPt(d) {
-  const intros = [
-    `Este ${d.fullType}${d.headline ? `, ${d.headline},` : ""} combina conforto, estilo e uma localização estratégica.`,
-    `Pensado para quem valoriza qualidade de vida, este ${d.fullType}${d.headline ? ` – ${d.headline}` : ""} reúne o que há de melhor na região.`,
-    `Se procura um ${d.fullType} completo${d.headline ? `, ${d.headline}` : ""}, esta pode ser a solução ideal para si.`
-  ];
-
-  const detailSegment = d.detailsJoined
-    ? ` Distribuído em ${d.detailsJoined}${d.formattedLocation ? `, situa-se em ${d.formattedLocation}` : ""}.`
-    : d.formattedLocation
-    ? ` Situado em ${d.formattedLocation}, oferece uma envolvente prática e agradável.`
-    : "";
-
-  const highlightSegment = d.formattedHighlights
-    ? ` Entre os principais diferenciais, destacam-se: ${d.formattedHighlights}.`
-    : "";
-
-  const audienceSegment = (() => {
-    switch (d.audience) {
-      case "familias": return ` Perfeito para famílias que procuram segurança, conforto e proximidade de serviços essenciais.`;
-      case "investidores": return ` Uma excelente opção para investidores que procuram rentabilidade e valorização a médio e longo prazo.`;
-      case "jovens": return ` Ideal para jovens profissionais que desejam praticidade, mobilidade e um espaço moderno para viver.`;
-      case "luxo": return ` Direcionado a um público exigente, que valoriza exclusividade, sofisticação e detalhes de alto padrão.`;
-      case "aluguel": return ` Uma escolha estratégica tanto para quem deseja arrendar com segurança como para quem procura boa liquidez no mercado.`;
-      default: return ` Uma oportunidade completa para quem valoriza um bom negócio e um espaço bem cuidado.`;
-    }
-  })();
-
-  const priceSegment = d.price ? ` Condições atrativas, com valor de ${d.price}.` : "";
-  const extrasSegment = d.formattedExtras ? ` Informação adicional: ${d.formattedExtras}.` : "";
-
-  return (rand(intros) + detailSegment + highlightSegment + audienceSegment + priceSegment + extrasSegment).trim();
-}
-
-function generateLongPt(d) {
-  const opening = [
-    `Imagine viver em um ${d.fullType}${d.headline ? ` onde ${d.headline.toLowerCase()}` : ""}, pensado em cada detalhe para proporcionar conforto, funcionalidade e uma experiência verdadeiramente marcante.`,
-    `Este ${d.fullType}${d.headline ? `, ${d.headline},` : ""} foi cuidadosamente preparado para oferecer muito mais do que um simples espaço físico: trata-se de um convite a um novo estilo de vida.`,
-    `Mais do que um ${d.fullType}, este imóvel representa uma oportunidade rara para quem deseja unir bem-estar, praticidade e um cenário perfeito para criar novas histórias.`
-  ];
-
-  const structure = d.detailsJoined
-    ? ` A configuração do imóvel contempla ${d.detailsJoined}, criando ambientes bem distribuídos e versáteis, prontos para se adaptarem às necessidades do dia a dia.`
-    : "";
-
-  const location = d.formattedLocation
-    ? ` Inserido em ${d.formattedLocation}, o imóvel beneficia de uma envolvente completa, com acesso facilitado a serviços, comércio, transportes e tudo o que é essencial para uma rotina equilibrada.`
-    : "";
-
-  const highlights = d.formattedHighlights
-    ? ` Entre os principais destaques, vale ressaltar ${d.formattedHighlights}, características que acrescentam valor, conforto e personalidade ao espaço.`
-    : "";
-
-  const toneSegment = (() => {
-    switch (d.tone) {
-      case "premium": return ` Cada acabamento, escolha de material e solução arquitetônica reforça a sensação de exclusividade, criando um ambiente sofisticado, acolhedor e alinhado às expectativas de um público de alto padrão.`;
-      case "emocional": return ` Cada ambiente foi pensado para acolher momentos especiais, celebrações em família, encontros com amigos e rotinas tranquilas, permitindo que este espaço se transforme no cenário perfeito para as próximas memórias.`;
-      case "objetivo": return ` A distribuição inteligente dos espaços e a combinação de diferenciais físicos tornam este imóvel uma solução prática, eficiente e altamente funcional para o uso diário.`;
-      default: return ` O equilíbrio entre estética, conforto e funcionalidade torna este imóvel uma proposta encantadora para quem não abre mão de viver bem.`;
-    }
-  })();
-
-  const audience = (() => {
-    switch (d.audience) {
-      case "familias": return ` Para famílias, o imóvel oferece ambientes acolhedores, áreas bem dimensionadas e um contexto ideal para quem procura segurança, tranquilidade e proximidade de escolas, serviços e lazer.`;
-      case "investidores": return ` Para investidores, este ativo representa uma combinação interessante entre potencial de valorização, boa procura na região e ótimas perspetivas de retorno, seja para revenda como para arrendamento.`;
-      case "jovens": return ` Para jovens profissionais, a localização estratégica e a praticidade dos espaços tornam o dia a dia mais fluido, com mobilidade facilitada e um ambiente moderno para viver, trabalhar e receber amigos.`;
-      case "luxo": return ` Para um público que valoriza luxo e exclusividade, cada detalhe deste imóvel contribui para uma experiência diferenciada, que se destaca tanto pela estética como pela qualidade da construção e dos acabamentos.`;
-      case "aluguel": return ` No mercado de arrendamento, este imóvel destaca-se pela ótima relação entre localização, estrutura e potencial de ocupação, sendo uma escolha sólida para quem procura rendimento recorrente e previsível.`;
-      default: return ` Seja para moradia própria ou investimento, trata-se de uma oportunidade consistente, bem localizada e com excelentes fundamentos de valorização.`;
-    }
-  })();
-
-  const price = d.price
-    ? ` Em relação às condições comerciais, o imóvel está disponível por ${d.price}, refletindo o conjunto de atributos que o tornam uma opção diferenciada dentro do mercado.`
-    : "";
-
-  const extras = d.formattedExtras
-    ? ` Como complemento, é importante destacar: ${d.formattedExtras}.`
-    : "";
-
-  const closingOptions = [
-    ` Se este perfil de imóvel faz sentido para o seu momento, vale a pena conhecer pessoalmente cada ambiente e sentir de perto tudo o que ele pode oferecer.`,
-    ` Para compreender todo o potencial deste imóvel, nada substitui uma visita: cada detalhe foi pensado para surpreender positivamente.`,
-    ` Se procura um imóvel que una razão e emoção na tomada de decisão, este pode ser o próximo grande passo.`
-  ];
-
-  return (rand(opening) + structure + location + highlights + toneSegment + audience + price + extras + " " + rand(closingOptions)).trim();
-}
-
-/* ENGLISH */
-function generateShortEn(d) {
-  const intros = [
-    `✨ Discover this ${d.fullType}${d.headline ? `: ${d.headline}` : ""}.`,
-    `🏡 Introducing a ${d.fullType}${d.headline ? ` – ${d.headline}` : ""} designed to impress.`,
-    `🌟 A unique opportunity: ${d.fullType}${d.headline ? `, ${d.headline}` : ""}.`
-  ];
-
-  const detailSegment = d.detailsJoined
-    ? ` Featuring ${d.detailsJoined}${d.formattedLocation ? ` in ${d.formattedLocation}` : ""}.`
-    : d.formattedLocation
-    ? ` Located in ${d.formattedLocation}.`
-    : "";
-
-  const highlightSegment = d.formattedHighlights
-    ? ` Highlights: ${d.formattedHighlights}.`
-    : "";
-
-  const priceSegment = d.price ? ` Price: ${d.price}.` : "";
-
-  return `${rand(intros)}${detailSegment}${highlightSegment}${priceSegment}`.trim();
-}
-
-function generateMediumEn(d) {
-  const intros = [
-    `This ${d.fullType}${d.headline ? `, ${d.headline},` : ""} blends comfort, style and a strategic location.`,
-    `Created for those who value quality of life, this ${d.fullType}${d.headline ? ` – ${d.headline}` : ""} brings together some of the best features in the area.`,
-    `If you're looking for a well-rounded ${d.fullType}${d.headline ? `, ${d.headline}` : ""}, this may be the ideal match.`
-  ];
-
-  const detailSegment = d.detailsJoined
-    ? ` The layout includes ${d.detailsJoined}${d.formattedLocation ? `, set in ${d.formattedLocation}` : ""}.`
-    : d.formattedLocation
-    ? ` Set in ${d.formattedLocation}, it offers a convenient and pleasant surroundings.`
-    : "";
-
-  const highlightSegment = d.formattedHighlights
-    ? ` Key features include: ${d.formattedHighlights}.`
-    : "";
-
-  const audienceSegment = (() => {
-    switch (d.audience) {
-      case "familias": return ` Perfect for families seeking safety, comfort and proximity to everyday amenities.`;
-      case "investidores": return ` An excellent option for investors looking for long-term value and solid rental demand.`;
-      case "jovens": return ` Ideal for young professionals who want practicality, mobility and a modern place to live.`;
-      case "luxo": return ` Tailored to demanding buyers who appreciate exclusivity, sophistication and high-end finishes.`;
-      case "aluguel": return ` A smart choice both for those looking to rent safely and for owners seeking strong market liquidity.`;
-      default: return ` A complete opportunity for anyone who values a well-maintained property and a good deal.`;
-    }
-  })();
-
-  const priceSegment = d.price ? ` Attractive terms available, with a price of ${d.price}.` : "";
-  const extrasSegment = d.formattedExtras ? ` Additional information: ${d.formattedExtras}.` : "";
-
-  return (rand(intros) + detailSegment + highlightSegment + audienceSegment + priceSegment + extrasSegment).trim();
-}
-
-function generateLongEn(d) {
-  const opening = [
-    `Imagine living in a ${d.fullType}${d.headline ? ` where ${d.headline.toLowerCase()}` : ""}, with every detail carefully planned to deliver comfort, functionality and a truly memorable experience.`,
-    `This ${d.fullType}${d.headline ? `, ${d.headline},` : ""} was designed to offer far more than just a physical space: it is an invitation to a new lifestyle.`,
-    `More than just a ${d.fullType}, this property is a rare opportunity for those who want to combine well-being, convenience and the perfect backdrop for new stories.`
-  ];
-
-  const structure = d.detailsJoined
-    ? ` The layout features ${d.detailsJoined}, creating well-balanced and versatile areas that easily adapt to everyday routines.`
-    : "";
-
-  const location = d.formattedLocation
-    ? ` Set in ${d.formattedLocation}, the property benefits from a complete surroundings with easy access to services, shops, transport and everything needed for a balanced routine.`
-    : "";
-
-  const highlights = d.formattedHighlights
-    ? ` Among the main highlights you will find ${d.formattedHighlights}, elements that add value, comfort and personality to every room.`
-    : "";
-
-  const toneSegment = (() => {
-    switch (d.tone) {
-      case "premium": return ` Every finish, material and architectural decision reinforces a sense of exclusivity, creating a refined, welcoming environment that meets the expectations of a high-end audience.`;
-      case "emocional": return ` Each room was thought out to host special moments, family gatherings and relaxed everyday life, turning this space into the perfect stage for your next memories.`;
-      case "objetivo": return ` The clever layout and strong physical attributes make this a practical, efficient and highly functional property for daily use.`;
-      default: return ` The balance between aesthetics, comfort and functionality makes this a truly charming proposal for those who refuse to compromise on quality of life.`;
-    }
-  })();
-
-  const audience = (() => {
-    switch (d.audience) {
-      case "familias": return ` For families, it offers welcoming rooms, well-sized areas and an ideal context for those seeking safety, tranquillity and proximity to schools, services and leisure.`;
-      case "investidores": return ` For investors, this asset represents an attractive blend of appreciation potential, strong demand and compelling prospects both for resale and rental.`;
-      case "jovens": return ` For young professionals, the strategic location and practical layout simplify everyday life, with great mobility and a modern setting to live, work and entertain.`;
-      case "luxo": return ` For those who value luxury and exclusivity, every detail contributes to a distinctive experience that stands out both for design and construction quality.`;
-      case "aluguel": return ` In the rental market, this property stands out thanks to its strong combination of location, layout and occupancy potential, making it a sound choice for consistent income.`;
-      default: return ` Whether for your own use or as an investment, this is a solid opportunity with excellent fundamentals and a highly attractive profile.`;
-    }
-  })();
-
-  const price = d.price
-    ? ` In commercial terms, the property is offered at ${d.price}, reflecting the full set of attributes that make it stand out in the market.`
-    : "";
-
-  const extras = d.formattedExtras
-    ? ` Additionally, it is worth noting: ${d.formattedExtras}.`
-    : "";
-
-  const closingOptions = [
-    ` To truly understand everything this property can offer, nothing replaces an in-person visit to experience each space up close.`,
-    ` If this profile matches what you're looking for, scheduling a viewing is the best next step to confirm how well it fits your plans.`,
-    ` If you're seeking a property where both reason and emotion align, this may well be your next big move.`
-  ];
-
-  return (rand(opening) + structure + location + highlights + toneSegment + audience + price + extras + " " + rand(closingOptions)).trim();
-}
-
-export function generateDescriptions(input, lang = "pt") {
-  if (!input || typeof input !== "object") {
-    input = {};
-  }
-
-  const d = baseData(input);
-  const isPt = (lang || "pt").toLowerCase().startsWith("pt");
-
-  try {
-    if (isPt) {
-      return {
-        short: generateShortPt(d),
-        medium: generateMediumPt(d),
-        long: generateLongPt(d)
-      };
-    } else {
-      return {
-        short: generateShortEn(d),
-        medium: generateMediumEn(d),
-        long: generateLongEn(d)
-      };
-    }
-  } catch (error) {
-    console.error("Error generating descriptions:", error);
-    const fallback = isPt 
-      ? "Erro ao gerar descrição. Por favor, verifique os dados inseridos."
-      : "Error generating description. Please check the input data.";
+    if (!text || typeof text !== 'string') return '';
     
+    return text
+        .split(/[,;.\n]/)
+        .map(item => item.trim())
+        .filter(item => item.length > 0)
+        .join(', ');
+}
+
+function processInputData(raw) {
+    const {
+        type = 'imóvel',
+        headline = '',
+        bedrooms = 0,
+        bathrooms = 0,
+        area = 0,
+        parking = 0,
+        price = '',
+        location = '',
+        highlights = '',
+        audience = 'familias',
+        tone = 'profissional'
+    } = raw;
+
+    // Processar detalhes
+    const details = [];
+    if (bedrooms > 0) details.push(`${bedrooms} quarto${bedrooms > 1 ? 's' : ''}`);
+    if (bathrooms > 0) details.push(`${bathrooms} banheiro${bathrooms > 1 ? 's' : ''}`);
+    if (area > 0) details.push(`${area} m²`);
+    if (parking > 0) details.push(`${parking} vaga${parking > 1 ? 's' : ''} de garagem`);
+
     return {
-      short: fallback,
-      medium: fallback,
-      long: fallback
+        type,
+        headline: headline.trim(),
+        details,
+        detailsText: details.join(' · '),
+        price: price.trim(),
+        location: location.trim(),
+        highlights: formatList(highlights),
+        audience,
+        tone
     };
-  }
+}
+
+// Português
+function generateShortPT(data) {
+    const intros = [
+        `✨ ${data.headline || `Excelente ${data.type}`}!`,
+        `🏡 ${data.headline || `Oportunidade única de ${data.type}`}!`,
+        `🌟 ${data.headline || `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} exclusivo`}!`
+    ];
+    
+    let description = getRandomItem(intros);
+    
+    if (data.details.length > 0) {
+        description += ` ${data.detailsText}.`;
+    }
+    
+    if (data.location) {
+        description += ` Localizado em ${data.location}.`;
+    }
+    
+    if (data.highlights) {
+        description += ` Destaques: ${data.highlights}.`;
+    }
+    
+    if (data.price) {
+        description += ` Valor: ${data.price}.`;
+    }
+    
+    return description;
+}
+
+function generateMediumPT(data) {
+    const intros = [
+        `Apresentamos ${data.headline ? data.headline.toLowerCase() : `este ${data.type} excepcional`}, uma oportunidade única no mercado imobiliário.`,
+        `Este ${data.type} ${data.headline ? `- ${data.headline}` : 'de destaque'} combina qualidade, conforto e localização privilegiada.`,
+        `Descubra ${data.headline ? data.headline.toLowerCase() : `este ${data.type} diferenciado`}, preparado para superar suas expectativas.`
+    ];
+    
+    let description = getRandomItem(intros);
+    
+    if (data.details.length > 0) {
+        description += ` Composto por ${data.detailsText}, oferece espaços bem distribuídos e funcionais.`;
+    }
+    
+    if (data.location) {
+        description += ` Situado em ${data.location}, desfruta de uma localização estratégica com fácil acesso a todos os serviços.`;
+    }
+    
+    if (data.highlights) {
+        description += ` Entre suas características especiais destacam-se: ${data.highlights}.`;
+    }
+    
+    // Tom
+    const tones = {
+        profissional: ` Uma proposta séria e bem estruturada, ideal para quem busca segurança e qualidade no investimento.`,
+        emocional: ` Um espaço que convida a criar memórias e viver momentos especiais em família.`,
+        luxuoso: ` Cada detalhe foi pensado para proporcionar uma experiência única de conforto e sofisticação.`,
+        direto: ` Excelente custo-benefício, pronto para uso imediato.`
+    };
+    
+    description += tones[data.tone] || tones.profissional;
+    
+    if (data.price) {
+        description += ` Disponível por ${data.price}.`;
+    }
+    
+    return description;
+}
+
+function generateLongPT(data) {
+    const intros = [
+        `Imagine-se em ${data.headline ? data.headline.toLowerCase() : `um ${data.type} que reúne tudo o que você procura`}. Esta é mais do que uma propriedade; é a concretização do seu projeto de vida.`,
+        `Este ${data.type} ${data.headline ? `- ${data.headline}` : ''} representa a perfeita harmonia entre localização, conforto e potencial de valorização.`,
+        `Prepare-se para conhecer ${data.headline ? data.headline.toLowerCase() : `um ${data.type} que redefine os padrões de excelência`} no mercado imobiliário.`
+    ];
+    
+    let description = getRandomItem(intros);
+    
+    // Estrutura
+    if (data.details.length > 0) {
+        description += ` A propriedade conta com ${data.detailsText}, proporcionando ambientes amplos, iluminados e perfeitamente adaptados às necessidades contemporâneas.`;
+    }
+    
+    // Localização
+    if (data.location) {
+        description += ` Localizado no coração de ${data.location}, você estará a poucos passos de tudo o que precisa: comércio, serviços, escolas e opções de lazer.`;
+    }
+    
+    // Características especiais
+    if (data.highlights) {
+        description += ` Entre os diferenciais que tornam esta propriedade única, destacamos: ${data.highlights}.`;
+    }
+    
+    // Público-alvo
+    const audiences = {
+        familias: ` Perfeito para famílias que buscam segurança, tranquilidade e qualidade de vida, com espaços generosos para crescer e criar memórias.`,
+        investidores: ` Uma oportunidade excepcional para investidores inteligentes, com alto potencial de valorização e excelente rentabilidade.`,
+        jovens: ` Ideal para jovens profissionais que valorizam praticidade, localização e um ambiente moderno para viver e trabalhar.`,
+        luxo: ` Para quem exige o melhor: acabamentos premium, design sofisticado e exclusividade em cada detalhe.`
+    };
+    
+    description += audiences[data.audience] || '';
+    
+    // Tom
+    const tones = {
+        profissional: ` Esta propriedade representa um investimento sólido e seguro, com características que garantem valorização constante ao longo do tempo.`,
+        emocional: ` Mais do que paredes e teto, este é um lar que acolhe sonhos, celebra conquistas e se transforma no palco das suas melhores histórias.`,
+        luxuoso: ` Cada centímetro foi cuidadosamente planejado para oferecer uma experiência de vida excepcional, onde o luxo se encontra com a funcionalidade.`,
+        direto: ` Propriedade em excelente estado, com documentação regularizada e pronto para negociação imediata.`
+    };
+    
+    description += tones[data.tone] || tones.profissional;
+    
+    // Preço
+    if (data.price) {
+        description += ` O valor de ${data.price} reflete a qualidade e o potencial desta excelente oportunidade.`;
+    }
+    
+    // Encerramento
+    const closings = [
+        ` Agende sua visita e descubra pessoalmente porque esta propriedade é a escolha certa para você.`,
+        ` Não perca esta oportunidade única de adquirir um imóvel que reúne qualidade, localização e potencial de valorização.`,
+        ` Entre em contato hoje mesmo para mais informações e para agendar uma visita personalizada.`
+    ];
+    
+    description += getRandomItem(closings);
+    
+    return description;
+}
+
+// Inglês
+function generateShortEN(data) {
+    const intros = [
+        `✨ ${data.headline || `Excellent ${data.type}`}!`,
+        `🏡 ${data.headline || `Unique ${data.type} opportunity`}!`,
+        `🌟 ${data.headline || `Exclusive ${data.type}`}!`
+    ];
+    
+    let description = getRandomItem(intros);
+    
+    if (data.details.length > 0) {
+        description += ` ${data.detailsText}.`;
+    }
+    
+    if (data.location) {
+        description += ` Located in ${data.location}.`;
+    }
+    
+    if (data.highlights) {
+        description += ` Highlights: ${data.highlights}.`;
+    }
+    
+    if (data.price) {
+        description += ` Price: ${data.price}.`;
+    }
+    
+    return description;
+}
+
+function generateMediumEN(data) {
+    const intros = [
+        `We present ${data.headline ? data.headline.toLowerCase() : `this exceptional ${data.type}`}, a unique opportunity in the real estate market.`,
+        `This ${data.type} ${data.headline ? `- ${data.headline}` : ''} combines quality, comfort and a privileged location.`,
+        `Discover ${data.headline ? data.headline.toLowerCase() : `this differentiated ${data.type}`}, ready to exceed your expectations.`
+    ];
+    
+    let description = getRandomItem(intros);
+    
+    if (data.details.length > 0) {
+        description += ` Composed of ${data.detailsText}, it offers well-distributed and functional spaces.`;
+    }
+    
+    if (data.location) {
+        description += ` Situated in ${data.location}, it enjoys a strategic location with easy access to all services.`;
+    }
+    
+    if (data.highlights) {
+        description += ` Among its special features are: ${data.highlights}.`;
+    }
+    
+    const tones = {
+        profissional: ` A serious and well-structured proposal, ideal for those seeking security and quality in their investment.`,
+        emocional: ` A space that invites you to create memories and live special moments with family.`,
+        luxuoso: ` Every detail was designed to provide a unique experience of comfort and sophistication.`,
+        direto: ` Excellent cost-benefit, ready for immediate use.`
+    };
+    
+    description += tones[data.tone] || tones.profissional;
+    
+    if (data.price) {
+        description += ` Available for ${data.price}.`;
+    }
+    
+    return description;
+}
+
+function generateLongEN(data) {
+    const intros = [
+        `Imagine yourself in ${data.headline ? data.headline.toLowerCase() : `a ${data.type} that brings together everything you're looking for`}. This is more than a property; it's the realization of your life project.`,
+        `This ${data.type} ${data.headline ? `- ${data.headline}` : ''} represents the perfect harmony between location, comfort and appreciation potential.`,
+        `Get ready to discover ${data.headline ? data.headline.toLowerCase() : `a ${data.type} that redefines excellence standards`} in the real estate market.`
+    ];
+    
+    let description = getRandomItem(intros);
+    
+    if (data.details.length > 0) {
+        description += ` The property features ${data.detailsText}, providing spacious, bright environments perfectly adapted to contemporary needs.`;
+    }
+    
+    if (data.location) {
+        description += ` Located in the heart of ${data.location}, you'll be steps away from everything you need: commerce, services, schools and leisure options.`;
+    }
+    
+    if (data.highlights) {
+        description += ` Among the differentials that make this property unique, we highlight: ${data.highlights}.`;
+    }
+    
+    const audiences = {
+        familias: ` Perfect for families looking for security, tranquility and quality of life, with generous spaces to grow and create memories.`,
+        investidores: ` An exceptional opportunity for smart investors, with high appreciation potential and excellent profitability.`,
+        jovens: ` Ideal for young professionals who value practicality, location and a modern environment to live and work.`,
+        luxo: ` For those who demand the best: premium finishes, sophisticated design and exclusivity in every detail.`
+    };
+    
+    description += audiences[data.audience] || '';
+    
+    const tones = {
+        profissional: ` This property represents a solid and safe investment, with characteristics that guarantee constant appreciation over time.`,
+        emocional: ` More than walls and a roof, this is a home that welcomes dreams, celebrates achievements and becomes the stage for your best stories.`,
+        luxuoso: ` Every centimeter was carefully planned to offer an exceptional living experience, where luxury meets functionality.`,
+        direto: ` Property in excellent condition, with regular documentation and ready for immediate negotiation.`
+    };
+    
+    description += tones[data.tone] || tones.profissional;
+    
+    if (data.price) {
+        description += ` The price of ${data.price} reflects the quality and potential of this excellent opportunity.`;
+    }
+    
+    const closings = [
+        ` Schedule your visit and discover personally why this property is the right choice for you.`,
+        ` Don't miss this unique opportunity to acquire a property that combines quality, location and appreciation potential.`,
+        ` Contact us today for more information and to schedule a personalized visit.`
+    ];
+    
+    description += getRandomItem(closings);
+    
+    return description;
+}
+
+export function generateDescriptions(input, lang = 'pt') {
+    try {
+        const data = processInputData(input || {});
+        
+        if (lang === 'en') {
+            return {
+                short: generateShortEN(data),
+                medium: generateMediumEN(data),
+                long: generateLongEN(data)
+            };
+        }
+        
+        // Padrão: português
+        return {
+            short: generateShortPT(data),
+            medium: generateMediumPT(data),
+            long: generateLongPT(data)
+        };
+    } catch (error) {
+        console.error("Error generating descriptions:", error);
+        
+        const errorMsg = lang === 'en' 
+            ? "Error generating description. Please try again."
+            : "Erro ao gerar descrição. Por favor, tente novamente.";
+        
+        return {
+            short: errorMsg,
+            medium: errorMsg,
+            long: errorMsg
+        };
+    }
 }

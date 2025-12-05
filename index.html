@@ -1,287 +1,239 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <title>NAGI REAL ESTATE ASSISTANT</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Gerador inteligente de descrições imobiliárias. Crie textos persuasivos para anúncios, apresentações e discursos.">
-  
-  <!-- Import map for ESM libraries -->
-  <script type="importmap">
+    <meta charset="UTF-8">
+    <title>NAGI BROKER AI - Assistente Imobiliário Inteligente</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script type="importmap">
     {
-      "imports": {
-        "nanoid": "https://esm.sh/nanoid@5.0.7"
-      }
+        "imports": {
+            "nanoid": "https://esm.sh/nanoid@5"
+        }
     }
-  </script>
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏡</text></svg>">
-
-  <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  
-  <!-- Meta tags for social sharing -->
-  <meta property="og:title" content="NAGI Real Estate Assistant">
-  <meta property="og:description" content="Gerador inteligente de descrições imobiliárias">
-  <meta property="og:type" content="website">
+    </script>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <div id="app-root">
-    <header class="app-header">
-      <div class="brand">
-        <span class="logo-dot"></span>
-        <span class="brand-text-main">NAGI</span>
-        <span class="brand-text-sub">Real Estate Assistant</span>
-      </div>
-
-      <div class="header-right">
-        <div class="lang-toggle" id="lang-toggle">
-          <button data-lang="pt" class="lang-btn active" aria-label="Português">PT</button>
-          <button data-lang="en" class="lang-btn" aria-label="English">EN</button>
+    <div id="app-root">
+        <header class="app-header">
+            <div class="brand">
+                <span class="logo-dot"></span>
+                <span class="brand-text-main">NAGI BROKER AI</span>
+                <span class="brand-text-sub">Assistente Imobiliário</span>
+            </div>
+            
+            <div class="header-right">
+                <div class="lang-toggle" id="lang-toggle">
+                    <button data-lang="pt" class="lang-btn active">PT</button>
+                    <button data-lang="en" class="lang-btn">EN</button>
+                </div>
+                
+                <div id="auth-area">
+                    <div id="g_id_onload"
+                         data-auto_prompt="false"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-itp_support="true"
+                         data-callback="handleGoogleCredential"
+                         data-client_id="54495922404-90dpm3542ktljge07ntttaa6vdt6ffco.apps.googleusercontent.com">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-size="medium"
+                         data-theme="outline"
+                         data-text="signin_with"
+                         data-shape="rectangular"
+                         data-logo_alignment="left">
+                    </div>
+                </div>
+                
+                <div id="user-info" class="user-info hidden">
+                    <img id="user-avatar" alt="User avatar">
+                    <span id="user-name"></span>
+                    <button id="sign-out-btn" class="ghost-btn">Sair</button>
+                </div>
+                
+                <div id="login-warning" class="login-warning">
+                    <span id="login-warning-text">Faça login com Google para começar</span>
+                </div>
+            </div>
+        </header>
+        
+        <main class="app-main">
+            <section class="panel panel-left">
+                <form id="property-form" class="property-form">
+                    <div class="panel-header">
+                        <h1 id="form-title">Gerador de Descrições Imobiliárias</h1>
+                        <p id="form-subtitle">
+                            Preencha os dados do imóvel e gere descrições persuasivas para anúncios
+                        </p>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="field-group">
+                            <label for="property-type" id="label-property-type">Tipo de Imóvel</label>
+                            <select id="property-type">
+                                <option value="apartamento">Apartamento</option>
+                                <option value="casa">Casa</option>
+                                <option value="moradia">Moradia</option>
+                                <option value="escritorio">Escritório</option>
+                                <option value="loja">Loja/Comercial</option>
+                                <option value="terreno">Terreno</option>
+                            </select>
+                        </div>
+                        
+                        <div class="field-group">
+                            <label for="headline" id="label-headline">Título / Destaque</label>
+                            <input id="headline" type="text" placeholder="Ex: Luxuoso apartamento com vista para o mar">
+                        </div>
+                        
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label for="bedrooms" id="label-bedrooms">Quartos</label>
+                                <input id="bedrooms" type="number" min="0">
+                            </div>
+                            <div class="field-group">
+                                <label for="bathrooms" id="label-bathrooms">Banheiros</label>
+                                <input id="bathrooms" type="number" min="0">
+                            </div>
+                            <div class="field-group">
+                                <label for="area" id="label-area">Área (m²)</label>
+                                <input id="area" type="number" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label for="parking" id="label-parking">Vagas</label>
+                                <input id="parking" type="number" min="0">
+                            </div>
+                            <div class="field-group">
+                                <label for="price" id="label-price">Preço</label>
+                                <input id="price" type="text" placeholder="Ex: 250.000 €">
+                            </div>
+                            <div class="field-group">
+                                <label for="location" id="label-location">Localização</label>
+                                <input id="location" type="text" placeholder="Bairro, Cidade">
+                            </div>
+                        </div>
+                        
+                        <div class="field-group">
+                            <label for="highlights" id="label-highlights">Características Especiais</label>
+                            <textarea id="highlights" rows="3" placeholder="Piscina, varanda, vista, amenities..."></textarea>
+                        </div>
+                        
+                        <div class="field-group">
+                            <label for="audience" id="label-audience">Público-Alvo</label>
+                            <select id="audience">
+                                <option value="familias">Famílias</option>
+                                <option value="investidores">Investidores</option>
+                                <option value="jovens">Jovens Profissionais</option>
+                                <option value="luxo">Alto Padrão</option>
+                            </select>
+                        </div>
+                        
+                        <div class="field-group">
+                            <label for="tone" id="label-tone">Tom da Mensagem</label>
+                            <select id="tone">
+                                <option value="profissional">Profissional</option>
+                                <option value="emocional">Emocional</option>
+                                <option value="luxuoso">Luxuoso</option>
+                                <option value="direto">Direto e Objetivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-footer">
+                        <div class="quota">
+                            <span id="quota-label">Gerações restantes:</span>
+                            <span id="quota-count">1</span>
+                        </div>
+                        <button type="submit" id="generate-btn" class="primary-btn" disabled>
+                            Gerar Descrições
+                        </button>
+                    </div>
+                </form>
+            </section>
+            
+            <section class="panel panel-right">
+                <div class="panel-header">
+                    <h2 id="output-title">Descrições Geradas</h2>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="short">Curta</button>
+                    <button class="tab-btn" data-tab="medium">Média</button>
+                    <button class="tab-btn" data-tab="long">Longa</button>
+                </div>
+                
+                <div class="outputs">
+                    <article id="output-short" class="output-block active"></article>
+                    <article id="output-medium" class="output-block"></article>
+                    <article id="output-long" class="output-block"></article>
+                </div>
+                
+                <div class="output-footer">
+                    <button id="copy-all-btn" class="ghost-btn small" disabled>
+                        Copiar Tudo
+                    </button>
+                    <span id="status-message" class="status-message"></span>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Modal de Pagamento -->
+        <div id="paywall-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <h2 id="paywall-title">Ativar Plano Profissional</h2>
+                <p id="paywall-text">
+                    Você usou sua geração gratuita. Ative o plano mensal para gerar descrições ilimitadas.
+                </p>
+                
+                <div class="plan-details">
+                    <div class="plan-price">
+                        <span class="price">$9,99</span>
+                        <span class="period">/mês</span>
+                    </div>
+                    <ul class="benefits-list" id="benefits-list">
+                        <li>✅ Gerações ilimitadas</li>
+                        <li>✅ 3 versões por descrição</li>
+                        <li>✅ Suporte em Português e Inglês</li>
+                        <li>✅ Atualizações constantes</li>
+                    </ul>
+                </div>
+                
+                <div id="paypal-button-container"></div>
+                
+                <div class="payment-verification hidden" id="payment-verification">
+                    <h3>Verificar Pagamento</h3>
+                    <p>Digite o código recebido por email após o pagamento:</p>
+                    <input type="text" id="verification-code" placeholder="Código de 6 dígitos" maxlength="6">
+                    <!-- NO LUGAR DO BOTÃO PAYPAL ANTIGO -->
+<button id="upgrade-btn" class="primary-btn full-width upgrade-btn">
+  🛒 Comprar Plano Profissional
+</button>
+                    <p class="hint" id="verification-hint"></p>
+                </div>
+                
+                <button id="already-paid-btn" class="ghost-btn full-width">
+                    Já efetuei o pagamento
+                </button>
+                
+                <p class="hint" id="paywall-hint">
+                    Após o pagamento, você receberá um código de ativação por email.
+                </p>
+            </div>
         </div>
-
-        <div id="auth-area">
-          <!-- Google sign-in -->
-          <div id="g_id_onload"
-               data-auto_prompt="false"
-               data-context="signin"
-               data-ux_mode="popup"
-               data-itp_support="true"
-               data-callback="handleGoogleCredential"
-               data-client_id="54495922404-90dpm3542ktljge07ntttaa6vdt6ffco.apps.googleusercontent.com">
-          </div>
-          <div class="g_id_signin"
-               data-type="standard"
-               data-size="medium"
-               data-theme="outline"
-               data-text="signin_with"
-               data-shape="rectangular"
-               data-logo_alignment="left"
-               data-width="auto">
-          </div>
-        </div>
-
-        <div id="user-info" class="user-info hidden">
-          <img id="user-avatar" alt="User avatar" crossorigin="anonymous" />
-          <span id="user-name"></span>
-          <button id="sign-out-btn" class="ghost-btn" aria-label="Sign out">Sair</button>
-        </div>
-
-        <div id="login-warning" class="login-warning hidden">
-          <span id="login-warning-text">Inicie sessão com o Google para começar.</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="app-main">
-      <section class="panel panel-left">
-        <form id="property-form" class="property-form" novalidate>
-          <div class="panel-header">
-            <h1 id="form-title">Gerador inteligente de descrições imobiliárias</h1>
-            <p id="form-subtitle">
-              Insira os detalhes do imóvel e receba três versões prontas para anúncios, apresentações e discursos.
-            </p>
-          </div>
-
-          <div class="form-grid">
-            <div class="field-group">
-              <label for="property-type" id="label-property-type">Tipo de imóvel</label>
-              <select id="property-type" required>
-                <option value="apartamento">Apartamento</option>
-                <option value="casa">Casa</option>
-                <option value="moradia">Moradia</option>
-                <option value="escritorio">Escritório</option>
-                <option value="loja">Loja/Comercial</option>
-                <option value="terreno">Terreno</option>
-                <option value="outro">Outro</option>
-              </select>
-            </div>
-
-            <div class="field-group">
-              <label for="headline" id="label-headline">Título / foco principal</label>
-              <input
-                id="headline"
-                type="text"
-                maxlength="120"
-                placeholder="Ex.: Luxuoso T3 com vista mar e varanda ampla"
-                aria-describedby="headline-help"
-              />
-              <small id="headline-help" style="font-size: 0.65rem; color: var(--text-soft); display: none;">
-                Use palavras-chave atrativas
-              </small>
-            </div>
-
-            <div class="field-row">
-              <div class="field-group">
-                <label for="bedrooms" id="label-bedrooms">Quartos</label>
-                <input id="bedrooms" type="number" min="0" step="1" />
-              </div>
-              <div class="field-group">
-                <label for="bathrooms" id="label-bathrooms">Banheiros</label>
-                <input id="bathrooms" type="number" min="0" step="1" />
-              </div>
-              <div class="field-group">
-                <label for="kitchens" id="label-kitchens">Cozinhas</label>
-                <input id="kitchens" type="number" min="0" step="1" />
-              </div>
-            </div>
-
-            <div class="field-row">
-              <div class="field-group">
-                <label for="parking" id="label-parking">Vagas de garagem</label>
-                <input id="parking" type="number" min="0" step="1" />
-              </div>
-              <div class="field-group">
-                <label for="area" id="label-area">Área (m²)</label>
-                <input id="area" type="number" min="0" step="1" />
-              </div>
-              <div class="field-group">
-                <label for="price" id="label-price">Valor</label>
-                <input
-                  id="price"
-                  type="text"
-                  placeholder="Ex.: 250.000 €, R$ 800.000, 1200 €/mês"
-                />
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label for="address" id="label-address">Morada / localização</label>
-              <input
-                id="address"
-                type="text"
-                placeholder="Rua, bairro, cidade, país ou zona de referência"
-              />
-            </div>
-
-            <div class="field-group">
-              <label for="location-context" id="label-location-context">Contexto da localização</label>
-              <input
-                id="location-context"
-                type="text"
-                placeholder="Próximo a escolas, praias, transportes, centros comerciais..."
-              />
-            </div>
-
-            <div class="field-group">
-              <label for="highlights" id="label-highlights">Destaques e comodidades</label>
-              <textarea
-                id="highlights"
-                rows="2"
-                placeholder="Piscina, varanda gourmet, suite, vista mar, mobiliado, condomínio com segurança 24h..."
-              ></textarea>
-            </div>
-
-            <div class="field-group">
-              <label for="extras" id="label-extras">Observações / informações complementares</label>
-              <textarea
-                id="extras"
-                rows="3"
-                placeholder="Informações específicas, regras do condomínio, possibilidade de financiamento, etc."
-              ></textarea>
-            </div>
-
-            <div class="field-row">
-              <div class="field-group">
-                <label for="audience" id="label-audience">Público-alvo</label>
-                <select id="audience">
-                  <option value="familias">Famílias</option>
-                  <option value="investidores">Investidores</option>
-                  <option value="jovens">Jovens profissionais</option>
-                  <option value="luxo">Segmento de luxo</option>
-                  <option value="aluguel">Arrendamento / aluguel</option>
-                  <option value="geral">Geral</option>
-                </select>
-              </div>
-
-              <div class="field-group">
-                <label for="tone" id="label-tone">Tom da comunicação</label>
-                <select id="tone">
-                  <option value="encantador">Encantador e envolvente</option>
-                  <option value="objetivo">Objetivo e profissional</option>
-                  <option value="emocional">Emocional e inspirador</option>
-                  <option value="premium">Premium / alto padrão</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-footer">
-            <div class="quota">
-              <span id="quota-label">Gerações gratuitas restantes:</span>
-              <span id="quota-count">3</span>
-            </div>
-            <button type="submit" id="generate-btn" class="primary-btn">
-              Gerar descrições
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section class="panel panel-right">
-        <div class="panel-header">
-          <h2 id="output-title">Resultados gerados</h2>
-        </div>
-
-        <div class="tabs">
-          <button class="tab-btn active" data-tab="short" id="tab-short">Curta</button>
-          <button class="tab-btn" data-tab="medium" id="tab-medium">Média</button>
-          <button class="tab-btn" data-tab="long" id="tab-long">Longa</button>
-        </div>
-
-        <div class="outputs">
-          <article id="output-short" class="output-block active" aria-labelledby="tab-short"></article>
-          <article id="output-medium" class="output-block" aria-labelledby="tab-medium"></article>
-          <article id="output-long" class="output-block" aria-labelledby="tab-long"></article>
-        </div>
-
-        <div class="output-footer">
-          <button id="copy-all-btn" class="ghost-btn small">
-            Copiar todas as versões
-          </button>
-          <span id="status-message" class="status-message"></span>
-        </div>
-      </section>
-    </main>
-
-    <!-- Paywall / upgrade modal -->
-    <div id="paywall-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="paywall-title">
-      <div class="overlay-content">
-        <h2 id="paywall-title">Atualize o seu plano</h2>
-        <p id="paywall-text">
-          Você já utilizou as 3 gerações gratuitas do NAGI REAL ESTATE ASSISTANT.
-          Para continuar a criar descrições ilimitadas, ative o plano profissional.
-        </p>
-
-        <ul class="benefits-list" id="benefits-list">
-          <li>Gerações ilimitadas de descrições e discursos imobiliários</li>
-          <li>Textos otimizados para anúncios online, impressos e apresentações</li>
-          <li>Conteúdos sempre diferentes, persuasivos e encantadores</li>
-        </ul>
-
-        <a
-          id="upgrade-btn"
-          class="primary-btn full-width upgrade-btn"
-          href="https://www.paypal.com/ncp/payment/YBLWPYKEZBBZC"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Atualizar plano via PayPal
-        </a>
-
-        <button id="already-paid-btn" class="ghost-btn full-width already-paid-btn">
-          Já efetuei o pagamento
-        </button>
-
-        <p class="hint" id="paywall-hint">
-          Após concluir o pagamento com sucesso, toque em "Já efetuei o pagamento"
-          para ativar o seu plano nesta conta.
-        </p>
-      </div>
     </div>
-  </div>
-
-  <script type="module" src="app.js"></script>
+    
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=test&currency=EUR" data-namespace="paypal_sdk"></script>
+    
+    <script type="module" src="app.js"></script>
 </body>
 </html>

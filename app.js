@@ -2,7 +2,7 @@ import { auth } from "./auth.js";
 import { billing } from "./billing.js";
 import { generateDescriptions } from "./contentGenerator.js";
 
-// DOM Elements
+// ==================== ELEMENTOS DO DOM ====================
 const els = {
   langToggle: document.getElementById("lang-toggle"),
   quotaCount: document.getElementById("quota-count"),
@@ -35,7 +35,7 @@ const els = {
   loginWarning: document.getElementById("login-warning"),
   loginWarningText: document.getElementById("login-warning-text"),
   
-  // Form fields
+  // Campos do formulário
   fieldType: document.getElementById("property-type"),
   fieldHeadline: document.getElementById("headline"),
   fieldBedrooms: document.getElementById("bedrooms"),
@@ -51,7 +51,7 @@ const els = {
   fieldAudience: document.getElementById("audience"),
   fieldTone: document.getElementById("tone"),
   
-  // Labels & tabs
+  // Labels & abas (para tradução)
   labelPropertyType: document.getElementById("label-property-type"),
   labelHeadline: document.getElementById("label-headline"),
   labelBedrooms: document.getElementById("label-bedrooms"),
@@ -71,70 +71,131 @@ const els = {
   tabLong: document.getElementById("tab-long")
 };
 
-// State
+// ==================== VARIÁVEIS GLOBAIS ====================
 let currentLang = "pt";
 let currentUser = null;
 let isGenerating = false;
 let formAutoSaveTimer = null;
 
-// ==================== INITIALIZATION ====================
-function init() {
-  // Set language based on browser
-  const browserLang = navigator.language || navigator.userLanguage;
-  currentLang = browserLang.toLowerCase().startsWith("pt") ? "pt" : "en";
+// ==================== SISTEMA DE CÓDIGOS MANUAL ====================
+let CODIGOS_ATIVOS = []; // Começa vazia, você vai adicionar códigos
+
+// Painel de controle admin (acessado com CTRL+SHIFT+A)
+function mostrarPainelAdmin() {
+  const painel = document.createElement("div");
+  painel.className = "overlay";
+  painel.style.zIndex = "9999";
   
-  // Apply initial language
-  applyLanguage(currentLang);
+  // Gerar 5 códigos novos
+  const novosCodigos = [];
+  for (let i = 0; i < 5; i++) {
+    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    novosCodigos.push(codigo);
+    CODIGOS_ATIVOS.push(codigo);
+  }
   
-  // Setup auth listener
-  auth.onChange(handleAuthChange);
+  painel.innerHTML = `
+    <div class="overlay-content" style="max-width: 500px;">
+      <h2 style="color: #f97316; margin-bottom: 20px;">🎮 PAINEL DE CONTROLE NAGI</h2>
+      
+      <div style="background: #0f172a; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <h3 style="font-size: 14px; margin-bottom: 10px;">🆕 NOVOS CÓDIGOS GERADOS:</h3>
+        <div style="font-family: monospace; font-size: 18px; line-height: 2;">
+          ${novosCodigos.map(c => `<div>${c}</div>`).join('')}
+        </div>
+        <button id="copiar-codigos" style="margin-top: 10px; padding: 8px 15px; background: #10b981; color: white; border: none; border-radius: 5px; cursor: pointer;">
+          📋 Copiar Todos
+        </button>
+      </div>
+      
+      <div style="background: #0f172a; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <h3 style="font-size: 14px; margin-bottom: 10px;">📊 CÓDIGOS ATIVOS (${CODIGOS_ATIVOS.length}):</h3>
+        <div style="max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          ${CODIGOS_ATIVOS.length > 0 
+            ? CODIGOS_ATIVOS.map(c => `<div style="padding: 3px 0;">${c}</div>`).join('') 
+            : '<div style="color: #9ca3af;">Nenhum código ativo</div>'}
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 14px; margin-bottom: 10px;">📝 INSTRUÇÕES:</h3>
+        <ol style="font-size: 13px; color: #9ca3af; padding-left: 20px;">
+          <li>Envie um código para cada cliente que pagar</li>
+          <li>O cliente digita o código no site para ativar o plano</li>
+          <li>O código é removido automaticamente após uso</li>
+          <li>Gere novos códigos sempre que precisar</li>
+        </ol>
+      </div>
+      
+      <button id="fechar-painel" class="primary-btn" style="width: 100%; padding: 12px;">
+        Fechar Painel
+      </button>
+    </div>
+  `;
   
-  // Load initial user
-  currentUser = auth.getCurrentUser();
-  updateAuthUI();
-  updateQuotaUI();
+  document.body.appendChild(painel);
   
-  // Setup tabs
-  handleTabClick("short");
+  // Copiar códigos
+  document.getElementById("copiar-codigos").addEventListener("click", () => {
+    navigator.clipboard.writeText(novosCodigos.join('\n'));
+    alert("✅ Códigos copiados! Cole no email para o cliente.");
+  });
   
-  // Setup form auto-save
-  setupFormAutoSave();
-  
-  // Load demo data for first-time users
-  loadDemoData();
-  
-  // Add event listeners
-  setupEventListeners();
-  
-  console.log("NAGI Real Estate Assistant initialized");
+  // Fechar painel
+  document.getElementById("fechar-painel").addEventListener("click", () => {
+    document.body.removeChild(painel);
+  });
 }
 
-// ==================== AUTHENTICATION ====================
-function handleAuthChange(user) {
+// Atalho do teclado para abrir painel
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key === "A") {
+    e.preventDefault();
+    if (document.querySelector(".overlay[style*='z-index: 9999']")) return;
+    mostrarPainelAdmin();
+  }
+});
+
+// Verificar código manual
+function verificarCodigoManual(codigo) {
+  if (!codigo || codigo.length !== 6) return false;
+  
+  const index = CODIGOS_ATIVOS.indexOf(codigo);
+  if (index !== -1) {
+    // Código válido - remover da lista
+    CODIGOS_ATIVOS.splice(index, 1);
+    return true;
+  }
+  
+  return false;
+}
+
+// ==================== GOOGLE AUTH CALLBACK ====================
+window.handleGoogleCredential = (response) => {
+  try {
+    const credential = response?.credential || response;
+    if (!credential) return;
+    
+    auth.handleGoogleCredential(credential);
+  } catch (error) {
+    console.error("Erro no login Google:", error);
+    mostrarStatus("❌ Erro no login. Tente novamente.", true);
+  }
+};
+
+// ==================== AUTENTICAÇÃO ====================
+auth.onChange((user) => {
   currentUser = user;
-  updateAuthUI();
-  updateQuotaUI();
+  atualizarInterfaceAuth();
+  atualizarQuotaUI();
   
   if (user) {
-    showStatus(
-      currentLang === "pt"
-        ? `Bem-vindo, ${user.name || "Usuário"}!`
-        : `Welcome, ${user.name || "User"}!`,
-      false
-    );
-  } else {
-    showStatus(
-      currentLang === "pt"
-        ? "Sessão encerrada"
-        : "Session ended",
-      false
-    );
+    mostrarStatus(`👋 Bem-vindo, ${user.name || "Usuário"}!`);
   }
-}
+});
 
-function updateAuthUI() {
+function atualizarInterfaceAuth() {
   if (currentUser) {
-    // User is logged in
     els.authArea.classList.add("hidden");
     els.userInfo.classList.remove("hidden");
     els.userName.textContent = currentUser.name || "Usuário";
@@ -148,63 +209,40 @@ function updateAuthUI() {
     
     els.loginWarning.classList.add("hidden");
     els.generateBtn.disabled = false;
-    
-    // Update quota immediately
-    updateQuotaUI();
   } else {
-    // User is not logged in
     els.authArea.classList.remove("hidden");
     els.userInfo.classList.add("hidden");
     els.loginWarning.classList.remove("hidden");
     els.generateBtn.disabled = true;
     
-    // Update login warning text
-    if (currentLang === "pt") {
-      els.loginWarningText.textContent = "Inicie sessão com o Google para começar a gerar descrições.";
-    } else {
-      els.loginWarningText.textContent = "Sign in with Google to start generating descriptions.";
-    }
+    els.loginWarningText.textContent = currentLang === "pt"
+      ? "Inicie sessão com o Google para começar."
+      : "Sign in with Google to start.";
   }
 }
 
-// ==================== BILLING & QUOTA ====================
-function updateQuotaUI() {
-  const remaining = billing.getRemaining(currentUser);
+// ==================== QUOTA & PLANOS ====================
+function atualizarQuotaUI() {
+  const restantes = billing.getRemaining(currentUser);
   
-  if (remaining === Infinity || billing.hasActivePlan(currentUser)) {
-    // Professional plan active
+  if (restantes === Infinity || billing.hasActivePlan(currentUser)) {
     els.quotaCount.textContent = "∞";
     els.quotaCount.style.color = "#10b981";
-    
-    if (currentLang === "pt") {
-      els.quotaLabel.textContent = "Plano profissional ativo";
-      els.loginWarningText.textContent = "Plano profissional ativo. Gerações ilimitadas disponíveis.";
-    } else {
-      els.quotaLabel.textContent = "Pro plan active";
-      els.loginWarningText.textContent = "Pro plan active. Unlimited generations available.";
-    }
+    els.quotaLabel.textContent = currentLang === "pt"
+      ? "Plano profissional ativo"
+      : "Pro plan active";
   } else {
-    // Free tier
-    els.quotaCount.textContent = String(remaining);
-    els.quotaCount.style.color = remaining === 0 ? "#ef4444" : "#fb923c";
-    
-    if (currentLang === "pt") {
-      els.quotaLabel.textContent = "Gerações gratuitas restantes:";
-      if (!currentUser) {
-        els.loginWarningText.textContent = "Inicie sessão com o Google para gerar descrições.";
-      }
-    } else {
-      els.quotaLabel.textContent = "Free generations left:";
-      if (!currentUser) {
-        els.loginWarningText.textContent = "Sign in with Google to generate descriptions.";
-      }
-    }
+    els.quotaCount.textContent = String(restantes);
+    els.quotaCount.style.color = restantes === 0 ? "#ef4444" : "#fb923c";
+    els.quotaLabel.textContent = currentLang === "pt"
+      ? "Gerações gratuitas restantes:"
+      : "Free generations left:";
   }
 }
 
-function checkGenerationPermission() {
+function verificarPermissaoGeracao() {
   if (!currentUser) {
-    showStatus(
+    mostrarStatus(
       currentLang === "pt"
         ? "Inicie sessão com o Google para gerar descrições."
         : "Sign in with Google to generate descriptions.",
@@ -216,27 +254,28 @@ function checkGenerationPermission() {
   if (billing.canGenerate(currentUser)) {
     return true;
   } else {
-    showPaywall();
+    mostrarPaywall();
     return false;
   }
 }
 
-// ==================== LANGUAGE MANAGEMENT ====================
-function applyLanguage(lang) {
+// ==================== IDIOMA ====================
+function aplicarIdioma(lang) {
   currentLang = lang;
   
-  // Update language toggle buttons
+  // Botões do idioma
   els.langToggle.querySelectorAll(".lang-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.lang === lang);
   });
 
   const isPt = lang === "pt";
 
-  // Update all interface texts
+  // Textos da interface
   if (isPt) {
-    // Form
+    // Títulos
     els.formTitle.textContent = "Gerador inteligente de descrições imobiliárias";
     els.formSubtitle.textContent = "Insira os detalhes do imóvel e receba três versões prontas para anúncios, apresentações e discursos.";
+    els.outputTitle.textContent = "Resultados gerados";
     
     // Labels
     els.labelPropertyType.textContent = "Tipo de imóvel";
@@ -254,23 +293,22 @@ function applyLanguage(lang) {
     els.labelAudience.textContent = "Público-alvo";
     els.labelTone.textContent = "Tom da comunicação";
     
-    // Buttons
+    // Botões
     els.generateBtn.textContent = "Gerar descrições";
     els.copyAllBtn.textContent = "Copiar todas as versões";
     els.tabShort.textContent = "Curta";
     els.tabMedium.textContent = "Média";
     els.tabLong.textContent = "Longa";
-    els.outputTitle.textContent = "Resultados gerados";
     els.signOutBtn.textContent = "Sair";
     
     // Paywall
     els.paywallTitle.textContent = "Atualize o seu plano";
-    els.paywallText.textContent = "Você já utilizou as 3 gerações gratuitas do NAGI REAL ESTATE ASSISTANT. Para continuar a criar descrições ilimitadas, ative o plano profissional.";
-    els.paywallHint.textContent = 'Após concluir o pagamento com sucesso, toque em "Já efetuei o pagamento" para ativar o seu plano nesta conta.';
-    els.alreadyPaidBtn.textContent = "Já efetuei o pagamento";
-    els.upgradeBtn.textContent = "Atualizar plano via PayPal";
+    els.paywallText.textContent = "Você já utilizou as 3 gerações gratuitas do NAGI REAL ESTATE ASSISTANT. Para continuar a criar descrições ilimitadas, adquira o plano profissional.";
+    els.paywallHint.textContent = 'Após o pagamento, você receberá um código por email. Digite-o aqui para ativar seu plano.';
+    els.alreadyPaidBtn.textContent = "Já paguei - Tenho um código";
+    els.upgradeBtn.textContent = "🛒 Comprar Plano Profissional";
     
-    // Benefits list
+    // Benefícios
     els.benefitsList.innerHTML = `
       <li>Gerações ilimitadas de descrições e discursos imobiliários</li>
       <li>Textos otimizados para anúncios online, impressos e apresentações</li>
@@ -284,29 +322,12 @@ function applyLanguage(lang) {
     els.fieldLocationContext.placeholder = "Próximo a escolas, praias, transportes, centros comerciais...";
     els.fieldHighlights.placeholder = "Piscina, varanda gourmet, suite, vista mar, mobiliado, condomínio com segurança 24h...";
     els.fieldExtras.placeholder = "Informações específicas, regras do condomínio, possibilidade de financiamento, etc.";
-    
-    // Options
-    els.fieldAudience.innerHTML = `
-      <option value="familias">Famílias</option>
-      <option value="investidores">Investidores</option>
-      <option value="jovens">Jovens profissionais</option>
-      <option value="luxo">Segmento de luxo</option>
-      <option value="aluguel">Arrendamento / aluguel</option>
-      <option value="geral">Geral</option>
-    `;
-    
-    els.fieldTone.innerHTML = `
-      <option value="encantador">Encantador e envolvente</option>
-      <option value="objetivo">Objetivo e profissional</option>
-      <option value="emocional">Emocional e inspirador</option>
-      <option value="premium">Premium / alto padrão</option>
-    `;
   } else {
     // English
     els.formTitle.textContent = "Smart real estate copy generator";
     els.formSubtitle.textContent = "Enter the property details and get three ready-to-use versions for ads, presentations and sales pitches.";
+    els.outputTitle.textContent = "Generated results";
     
-    // Labels
     els.labelPropertyType.textContent = "Property type";
     els.labelHeadline.textContent = "Headline / main highlight";
     els.labelBedrooms.textContent = "Bedrooms";
@@ -322,74 +343,49 @@ function applyLanguage(lang) {
     els.labelAudience.textContent = "Target audience";
     els.labelTone.textContent = "Tone of voice";
     
-    // Buttons
     els.generateBtn.textContent = "Generate descriptions";
     els.copyAllBtn.textContent = "Copy all versions";
     els.tabShort.textContent = "Short";
     els.tabMedium.textContent = "Standard";
     els.tabLong.textContent = "Extended";
-    els.outputTitle.textContent = "Generated results";
     els.signOutBtn.textContent = "Sign out";
     
-    // Paywall
     els.paywallTitle.textContent = "Upgrade your plan";
-    els.paywallText.textContent = "You have already used the 3 free generations of NAGI REAL ESTATE ASSISTANT. To keep generating unlimited descriptions, activate the professional plan.";
-    els.paywallHint.textContent = 'After you successfully complete payment, tap "I have paid" to activate your plan for this account.';
-    els.alreadyPaidBtn.textContent = "I have paid";
-    els.upgradeBtn.textContent = "Upgrade via PayPal";
+    els.paywallText.textContent = "You have already used the 3 free generations of NAGI REAL ESTATE ASSISTANT. To keep generating unlimited descriptions, buy the professional plan.";
+    els.paywallHint.textContent = 'After payment, you will receive a code by email. Enter it here to activate your plan.';
+    els.alreadyPaidBtn.textContent = "I paid - I have a code";
+    els.upgradeBtn.textContent = "🛒 Buy Professional Plan";
     
-    // Benefits list
     els.benefitsList.innerHTML = `
       <li>Unlimited real estate descriptions and sales scripts</li>
       <li>Copy optimized for online ads, print materials and presentations</li>
       <li>Always fresh, persuasive and engaging content</li>
     `;
     
-    // Placeholders
     els.fieldHeadline.placeholder = "Ex.: Luxury T3 with sea view and spacious balcony";
     els.fieldPrice.placeholder = "Ex.: €250,000, $800,000, €1200/month";
     els.fieldAddress.placeholder = "Street, neighborhood, city, country or reference area";
     els.fieldLocationContext.placeholder = "Near schools, beaches, transport, shopping centers...";
     els.fieldHighlights.placeholder = "Pool, gourmet balcony, en-suite, sea view, furnished, 24h security...";
     els.fieldExtras.placeholder = "Specific information, condo rules, financing possibilities, etc.";
-    
-    // Options
-    els.fieldAudience.innerHTML = `
-      <option value="familias">Families</option>
-      <option value="investidores">Investors</option>
-      <option value="jovens">Young professionals</option>
-      <option value="luxo">Luxury segment</option>
-      <option value="aluguel">Rental</option>
-      <option value="geral">General</option>
-    `;
-    
-    els.fieldTone.innerHTML = `
-      <option value="encantador">Charming & engaging</option>
-      <option value="objetivo">Objective & professional</option>
-      <option value="emocional">Emotional & inspirational</option>
-      <option value="premium">Premium / high-end</option>
-    `;
   }
   
-  // Update quota display
-  updateQuotaUI();
+  atualizarQuotaUI();
 }
 
-// ==================== TAB MANAGEMENT ====================
-function handleTabClick(tab) {
-  // Update tab buttons
+// ==================== ABAS ====================
+function clicarAba(tab) {
   els.tabButtons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === tab);
   });
   
-  // Show corresponding output
   ["short", "medium", "long"].forEach((key) => {
     els.outputs[key].classList.toggle("active", key === tab);
   });
 }
 
-// ==================== FORM HANDLING ====================
-function collectFormData() {
+// ==================== FORMULÁRIO ====================
+function coletarDadosFormulario() {
   return {
     type: els.fieldType.value || "imóvel",
     headline: els.fieldHeadline.value || "",
@@ -408,82 +404,78 @@ function collectFormData() {
   };
 }
 
-function validateFormData(data) {
-  const hasMinimumData = 
-    data.type ||
-    data.headline.trim() ||
-    data.bedrooms > 0 ||
-    data.bathrooms > 0 ||
-    data.area > 0 ||
-    data.address.trim() ||
-    data.locationContext.trim() ||
-    data.highlights.trim();
+function validarDadosFormulario(dados) {
+  const temDadosMinimos = 
+    dados.type ||
+    dados.headline.trim() ||
+    dados.bedrooms > 0 ||
+    dados.bathrooms > 0 ||
+    dados.area > 0 ||
+    dados.address.trim() ||
+    dados.locationContext.trim() ||
+    dados.highlights.trim();
   
-  return hasMinimumData;
+  return temDadosMinimos;
 }
 
-function saveFormData() {
-  const formData = collectFormData();
+function salvarFormulario() {
+  const dados = coletarDadosFormulario();
   try {
-    localStorage.setItem("nagi_form_data", JSON.stringify(formData));
+    localStorage.setItem("nagi_form_data", JSON.stringify(dados));
   } catch (error) {
-    console.warn("Could not save form data:", error);
+    console.warn("Não foi possível salvar:", error);
   }
 }
 
-function loadFormData() {
+function carregarFormulario() {
   try {
-    const saved = localStorage.getItem("nagi_form_data");
-    if (!saved) return false;
+    const salvo = localStorage.getItem("nagi_form_data");
+    if (!salvo) return false;
     
-    const data = JSON.parse(saved);
+    const dados = JSON.parse(salvo);
     
-    // Restore form values
-    els.fieldType.value = data.type || "apartamento";
-    els.fieldHeadline.value = data.headline || "";
-    els.fieldBedrooms.value = data.bedrooms || "";
-    els.fieldBathrooms.value = data.bathrooms || "";
-    els.fieldKitchens.value = data.kitchens || "";
-    els.fieldParking.value = data.parking || "";
-    els.fieldArea.value = data.area || "";
-    els.fieldPrice.value = data.price || "";
-    els.fieldAddress.value = data.address || "";
-    els.fieldLocationContext.value = data.locationContext || "";
-    els.fieldHighlights.value = data.highlights || "";
-    els.fieldExtras.value = data.extras || "";
-    els.fieldAudience.value = data.audience || "geral";
-    els.fieldTone.value = data.tone || "encantador";
+    els.fieldType.value = dados.type || "apartamento";
+    els.fieldHeadline.value = dados.headline || "";
+    els.fieldBedrooms.value = dados.bedrooms || "";
+    els.fieldBathrooms.value = dados.bathrooms || "";
+    els.fieldKitchens.value = dados.kitchens || "";
+    els.fieldParking.value = dados.parking || "";
+    els.fieldArea.value = dados.area || "";
+    els.fieldPrice.value = dados.price || "";
+    els.fieldAddress.value = dados.address || "";
+    els.fieldLocationContext.value = dados.locationContext || "";
+    els.fieldHighlights.value = dados.highlights || "";
+    els.fieldExtras.value = dados.extras || "";
+    els.fieldAudience.value = dados.audience || "geral";
+    els.fieldTone.value = dados.tone || "encantador";
     
     return true;
   } catch (error) {
-    console.warn("Could not load form data:", error);
     return false;
   }
 }
 
-function setupFormAutoSave() {
-  const formElements = [
+function configurarAutoSave() {
+  const elementosForm = [
     els.fieldType, els.fieldHeadline, els.fieldBedrooms, els.fieldBathrooms,
     els.fieldKitchens, els.fieldParking, els.fieldArea, els.fieldPrice,
     els.fieldAddress, els.fieldLocationContext, els.fieldHighlights,
     els.fieldExtras, els.fieldAudience, els.fieldTone
   ];
   
-  formElements.forEach(element => {
-    element.addEventListener("input", () => {
-      // Debounce the save operation
+  elementosForm.forEach(elemento => {
+    elemento.addEventListener("input", () => {
       clearTimeout(formAutoSaveTimer);
-      formAutoSaveTimer = setTimeout(saveFormData, 500);
+      formAutoSaveTimer = setTimeout(salvarFormulario, 500);
     });
     
-    element.addEventListener("change", saveFormData);
+    elemento.addEventListener("change", salvarFormulario);
   });
 }
 
-function loadDemoData() {
-  // Check if user has visited before
-  if (localStorage.getItem("nagi_first_visit") !== "completed") {
-    // Load demo data
+function carregarDadosDemo() {
+  if (localStorage.getItem("nagi_primeira_vez") !== "sim") {
+    // Dados de exemplo
     els.fieldType.value = "apartamento";
     els.fieldHeadline.value = currentLang === "pt" 
       ? "Luxuoso T3 com vista mar e varanda ampla" 
@@ -507,25 +499,20 @@ function loadDemoData() {
     els.fieldAudience.value = "familias";
     els.fieldTone.value = "premium";
     
-    // Mark first visit as completed
-    localStorage.setItem("nagi_first_visit", "completed");
-    
-    // Save demo data
-    saveFormData();
+    localStorage.setItem("nagi_primeira_vez", "sim");
+    salvarFormulario();
   }
 }
 
-// ==================== CONTENT GENERATION ====================
-async function generateContent() {
+// ==================== GERAÇÃO DE CONTEÚDO ====================
+async function gerarConteudo() {
   if (isGenerating) return;
   
-  // Check permissions
-  if (!checkGenerationPermission()) return;
+  if (!verificarPermissaoGeracao()) return;
   
-  // Validate form
-  const formData = collectFormData();
-  if (!validateFormData(formData)) {
-    showStatus(
+  const dados = coletarDadosFormulario();
+  if (!validarDadosFormulario(dados)) {
+    mostrarStatus(
       currentLang === "pt"
         ? "Preencha pelo menos um campo principal do imóvel."
         : "Fill in at least one main property field.",
@@ -534,98 +521,84 @@ async function generateContent() {
     return;
   }
   
-  // Set generating state
   isGenerating = true;
-  const originalBtnText = els.generateBtn.textContent;
+  const textoOriginal = els.generateBtn.textContent;
   els.generateBtn.textContent = currentLang === "pt" ? "Gerando..." : "Generating...";
   els.generateBtn.disabled = true;
   
   try {
-    // Generate descriptions
-    const results = generateDescriptions(formData, currentLang);
+    const resultados = generateDescriptions(dados, currentLang);
     
-    // Update UI with results
-    els.outputs.short.textContent = results.short || "";
-    els.outputs.medium.textContent = results.medium || "";
-    els.outputs.long.textContent = results.long || "";
+    els.outputs.short.textContent = resultados.short || "";
+    els.outputs.medium.textContent = resultados.medium || "";
+    els.outputs.long.textContent = resultados.long || "";
     
-    // Register usage
     billing.registerGeneration(currentUser);
+    atualizarQuotaUI();
+    clicarAba("short");
+    salvarFormulario();
     
-    // Update quota
-    updateQuotaUI();
-    
-    // Switch to short tab to show results
-    handleTabClick("short");
-    
-    // Show success message
     if (billing.isPaywalled(currentUser)) {
-      showStatus(
+      mostrarStatus(
         currentLang === "pt"
-          ? "Limite gratuito atingido. Ative o plano para continuar."
-          : "Free limit reached. Activate plan to continue."
+          ? "Limite gratuito atingido. Adquira o plano para continuar."
+          : "Free limit reached. Purchase plan to continue."
       );
     } else {
-      showStatus(
+      mostrarStatus(
         currentLang === "pt"
-          ? "Descrições geradas com sucesso!"
-          : "Descriptions generated successfully!"
+          ? "✅ Descrições geradas com sucesso!"
+          : "✅ Descriptions generated successfully!"
       );
     }
     
-    // Save form data
-    saveFormData();
-    
   } catch (error) {
-    console.error("Generation error:", error);
-    showStatus(
+    console.error("Erro na geração:", error);
+    mostrarStatus(
       currentLang === "pt"
-        ? "Erro ao gerar descrições. Tente novamente."
-        : "Error generating descriptions. Please try again.",
+        ? "❌ Erro ao gerar descrições. Tente novamente."
+        : "❌ Error generating descriptions. Please try again.",
       true
     );
     
-    // Fallback content
-    const fallbackText = currentLang === "pt"
+    const textoFallback = currentLang === "pt"
       ? "Ocorreu um erro ao gerar as descrições. Por favor, verifique os dados inseridos e tente novamente."
       : "An error occurred while generating descriptions. Please check your input and try again.";
     
-    els.outputs.short.textContent = fallbackText;
-    els.outputs.medium.textContent = fallbackText;
-    els.outputs.long.textContent = fallbackText;
+    els.outputs.short.textContent = textoFallback;
+    els.outputs.medium.textContent = textoFallback;
+    els.outputs.long.textContent = textoFallback;
     
   } finally {
-    // Reset generating state
     isGenerating = false;
-    els.generateBtn.textContent = originalBtnText;
+    els.generateBtn.textContent = textoOriginal;
     els.generateBtn.disabled = !currentUser;
   }
 }
 
-// ==================== STATUS MESSAGES ====================
-function showStatus(text, isError = false) {
-  els.statusMessage.textContent = text || "";
-  els.statusMessage.style.color = isError ? "#ef4444" : "#9ca3af";
+// ==================== MENSAGENS DE STATUS ====================
+function mostrarStatus(texto, erro = false) {
+  els.statusMessage.textContent = texto || "";
+  els.statusMessage.style.color = erro ? "#ef4444" : "#9ca3af";
   
-  if (!text) return;
+  if (!texto) return;
   
-  // Auto-clear after 3 seconds
   setTimeout(() => {
-    if (els.statusMessage.textContent === text) {
+    if (els.statusMessage.textContent === texto) {
       els.statusMessage.textContent = "";
     }
   }, 3000);
 }
 
-// ==================== COPY FUNCTIONALITY ====================
-async function copyAllContent() {
-  const combined = [els.outputs.short, els.outputs.medium, els.outputs.long]
+// ==================== COPIAR CONTEÚDO ====================
+async function copiarTodoConteudo() {
+  const combinado = [els.outputs.short, els.outputs.medium, els.outputs.long]
     .map((el) => el.textContent.trim())
     .filter(Boolean)
     .join("\n\n---\n\n");
   
-  if (!combined) {
-    showStatus(
+  if (!combinado) {
+    mostrarStatus(
       currentLang === "pt"
         ? "Nenhum conteúdo para copiar."
         : "No content to copy.",
@@ -635,214 +608,244 @@ async function copyAllContent() {
   }
   
   try {
-    // Modern clipboard API
-    await navigator.clipboard.writeText(combined);
-    showStatus(
+    await navigator.clipboard.writeText(combinado);
+    mostrarStatus(
       currentLang === "pt"
-        ? "Conteúdo copiado para a área de transferência!"
-        : "Content copied to clipboard!"
+        ? "✅ Conteúdo copiado!"
+        : "✅ Content copied!"
     );
   } catch (error) {
-    // Fallback for older browsers or insecure contexts
-    console.warn("Clipboard API failed, using fallback:", error);
-    
-    const textArea = document.createElement("textarea");
-    textArea.value = combined;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
+    // Fallback para navegadores antigos
+    const areaTexto = document.createElement("textarea");
+    areaTexto.value = combinado;
+    areaTexto.style.position = "fixed";
+    areaTexto.style.left = "-999999px";
+    areaTexto.style.top = "-999999px";
+    document.body.appendChild(areaTexto);
+    areaTexto.focus();
+    areaTexto.select();
     
     try {
-      const successful = document.execCommand("copy");
-      if (successful) {
-        showStatus(
-          currentLang === "pt"
-            ? "Conteúdo copiado!"
-            : "Content copied!"
-        );
-      } else {
-        throw new Error("execCommand failed");
-      }
-    } catch (err) {
-      console.error("Fallback copy failed:", err);
-      showStatus(
+      document.execCommand("copy");
+      mostrarStatus(
         currentLang === "pt"
-          ? "Não foi possível copiar. Tente selecionar e copiar manualmente."
-          : "Unable to copy. Please select and copy manually.",
+          ? "✅ Conteúdo copiado!"
+          : "✅ Content copied!"
+      );
+    } catch (err) {
+      mostrarStatus(
+        currentLang === "pt"
+          ? "❌ Não foi possível copiar. Selecione e copie manualmente."
+          : "❌ Unable to copy. Please select and copy manually.",
         true
       );
     } finally {
-      document.body.removeChild(textArea);
+      document.body.removeChild(areaTexto);
     }
   }
 }
 
-// ==================== PAYWALL MANAGEMENT ====================
-function showPaywall() {
+// ==================== PAYWALL ====================
+function mostrarPaywall() {
   els.paywallOverlay.classList.remove("hidden");
   document.body.style.overflow = "hidden";
-  
-  // Focus management for accessibility
-  els.upgradeBtn.focus();
 }
 
-function hidePaywall() {
+function esconderPaywall() {
   els.paywallOverlay.classList.add("hidden");
   document.body.style.overflow = "";
-  
-  // Return focus to generate button
-  els.generateBtn.focus();
 }
 
-function handlePlanActivation() {
-  if (!currentUser) {
-    showStatus(
-      currentLang === "pt"
-        ? "Inicie sessão com o Google antes de ativar o plano."
-        : "Please sign in with Google before activating the plan.",
-      true
-    );
-    return;
-  }
+function mostrarVerificacaoCodigo() {
+  const modal = document.createElement("div");
+  modal.className = "overlay";
+  modal.style.zIndex = "1001";
   
-  billing.activatePlan(currentUser);
-  hidePaywall();
-  updateQuotaUI();
+  modal.innerHTML = `
+    <div class="overlay-content" style="max-width: 400px; text-align: center;">
+      <h2 style="color: #f97316;">🔑 ATIVAR PLANO PROFISSIONAL</h2>
+      <p style="margin-bottom: 20px;">
+        Digite o código de 6 dígitos que você recebeu após o pagamento.
+      </p>
+      
+      <input type="text" 
+             id="input-codigo" 
+             placeholder="Ex: 123456"
+             style="width: 100%; padding: 15px; font-size: 24px; text-align: center; border-radius: 10px; border: 2px solid #f97316; margin-bottom: 20px;"
+             maxlength="6">
+      
+      <button id="btn-ativar" class="primary-btn" style="padding: 12px 30px; font-size: 16px; margin-right: 10px;">
+        ✅ ATIVAR PLANO
+      </button>
+      
+      <button id="btn-cancelar" class="ghost-btn" style="padding: 12px 30px; font-size: 16px;">
+        ❌ CANCELAR
+      </button>
+      
+      <div style="margin-top: 25px; padding: 15px; background: rgba(249, 115, 22, 0.1); border-radius: 10px;">
+        <p style="margin: 0; font-size: 14px; color: #fb923c;">
+          <strong>Não tem código?</strong><br>
+          Envie um email para <strong>suporte@seudominio.com</strong><br>
+          com seu email de login e comprovante de pagamento.
+        </p>
+      </div>
+    </div>
+  `;
   
-  showStatus(
-    currentLang === "pt"
-      ? "Plano profissional ativado com sucesso!"
-      : "Professional plan activated successfully!"
-  );
-}
-
-// ==================== EVENT LISTENERS ====================
-function setupEventListeners() {
-  // Language toggle
-  els.langToggle.addEventListener("click", (e) => {
-    const btn = e.target.closest(".lang-btn");
-    if (!btn) return;
-    applyLanguage(btn.dataset.lang);
-  });
+  document.body.appendChild(modal);
   
-  // Tab switching
-  els.tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => handleTabClick(btn.dataset.tab));
-  });
+  const btnAtivar = modal.querySelector("#btn-ativar");
+  const btnCancelar = modal.querySelector("#btn-cancelar");
+  const inputCodigo = modal.querySelector("#input-codigo");
   
-  // Form submission
-  els.form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    generateContent();
-  });
-  
-  // Copy all button
-  els.copyAllBtn.addEventListener("click", copyAllContent);
-  
-  // Sign out button
-  els.signOutBtn.addEventListener("click", () => {
-    auth.signOut();
-  });
-  
-  // Paywall buttons
-  els.alreadyPaidBtn.addEventListener("click", handlePlanActivation);
-  
-  // Close paywall when clicking overlay
-  els.paywallOverlay.addEventListener("click", (e) => {
-    if (e.target === els.paywallOverlay) {
-      hidePaywall();
-    }
-  });
-  
-  // Close paywall with Escape key
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !els.paywallOverlay.classList.contains("hidden")) {
-      hidePaywall();
-    }
-  });
-  
-  // Input validation for number fields
-  const numberFields = [els.fieldBedrooms, els.fieldBathrooms, els.fieldKitchens, els.fieldParking, els.fieldArea];
-  numberFields.forEach(field => {
-    field.addEventListener("input", () => {
-      if (field.value < 0) field.value = 0;
-      if (field.value > 999) field.value = 999;
-    });
-  });
-  
-  // Prevent form submission on Enter in textareas
-  els.fieldHighlights.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-    }
-  });
-  
-  els.fieldExtras.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-    }
-  });
-  
-  // Auto-focus on headline field
-  els.fieldHeadline.addEventListener("focus", () => {
-    els.fieldHeadline.select();
-  });
-  
-  // Help tooltip for form
-  const helpTooltip = document.createElement("div");
-  helpTooltip.className = "hint";
-  helpTooltip.style.cssText = "text-align: center; margin-top: 4px; font-size: 0.7rem; opacity: 0.7;";
-  helpTooltip.textContent = currentLang === "pt"
-    ? "💡 Dica: Preencha pelo menos 3-4 campos para melhores resultados!"
-    : "💡 Tip: Fill in at least 3-4 fields for best results!";
-  
-  els.form.appendChild(helpTooltip);
-}
-
-// ==================== EXPOSE GLOBAL FUNCTIONS ====================
-// Make Google auth callback available globally
-window.handleGoogleCredential = (response) => {
-  try {
-    const credential = response?.credential || response;
-    if (!credential) {
-      console.warn("No credential received from Google");
-      showStatus(
-        currentLang === "pt"
-          ? "Erro no login do Google. Tente novamente."
-          : "Google login error. Please try again.",
-        true
-      );
+  btnAtivar.addEventListener("click", () => {
+    const codigo = inputCodigo.value.trim();
+    if (!codigo || codigo.length !== 6) {
+      alert("Por favor, digite um código de 6 dígitos.");
       return;
     }
     
-    auth.handleGoogleCredential(credential);
-  } catch (error) {
-    console.error("Error handling Google credential:", error);
-    showStatus(
-      currentLang === "pt"
-        ? "Erro ao processar login. Tente novamente."
-        : "Error processing login. Please try again.",
-      true
-    );
+    if (verificarCodigoManual(codigo)) {
+      billing.activatePlan(currentUser);
+      atualizarQuotaUI();
+      esconderPaywall();
+      document.body.removeChild(modal);
+      mostrarStatus("✅ Plano ativado com sucesso!");
+    } else {
+      mostrarStatus("❌ Código inválido. Verifique e tente novamente.", true);
+    }
+  });
+  
+  btnCancelar.addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
+  
+  inputCodigo.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      btnAtivar.click();
+    }
+  });
+  
+  inputCodigo.focus();
+}
+
+// ==================== LINK DE PAGAMENTO ====================
+function abrirLinkPagamento() {
+  if (!currentUser) {
+    mostrarStatus("Faça login primeiro para comprar o plano.", true);
+    return;
   }
-};
+  
+  // SUBSTITUA ESTE LINK PELO SEU LINK REAL DE PAGAMENTO
+  const linkPagamento = "https://www.paypal.com/ncp/payment/YBLWPYKEZBBZC";
+  // OU use Mercado Pago: "https://www.mercadopago.com.br/checkout/v1/redirect"
+  // OU use PagSeguro: "https://pagseguro.uol.com.br/checkout/v2/payment.html"
+  
+  window.open(linkPagamento, "_blank");
+  mostrarStatus("Redirecionando para página de pagamento...");
+}
 
-// ==================== INITIALIZE APPLICATION ====================
-// Start the application when DOM is loaded
-document.addEventListener("DOMContentLoaded", init);
+// ==================== EVENT LISTENERS ====================
+function configurarEventListeners() {
+  // Idioma
+  els.langToggle.addEventListener("click", (e) => {
+    const btn = e.target.closest(".lang-btn");
+    if (!btn) return;
+    aplicarIdioma(btn.dataset.lang);
+  });
+  
+  // Abas
+  els.tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => clicarAba(btn.dataset.tab));
+  });
+  
+  // Formulário
+  els.form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    gerarConteudo();
+  });
+  
+  // Copiar tudo
+  els.copyAllBtn.addEventListener("click", copiarTodoConteudo);
+  
+  // Sair
+  els.signOutBtn.addEventListener("click", () => {
+    auth.signOut();
+    mostrarStatus("Sessão encerrada. Até logo!");
+  });
+  
+  // Botão "Já paguei"
+  els.alreadyPaidBtn.addEventListener("click", mostrarVerificacaoCodigo);
+  
+  // Botão "Comprar Plano"
+  els.upgradeBtn.addEventListener("click", abrirLinkPagamento);
+  
+  // Fechar paywall clicando fora
+  els.paywallOverlay.addEventListener("click", (e) => {
+    if (e.target === els.paywallOverlay) {
+      esconderPaywall();
+    }
+  });
+  
+  // Fechar com ESC
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !els.paywallOverlay.classList.contains("hidden")) {
+      esconderPaywall();
+    }
+  });
+  
+  // Validação de números
+  const camposNumeros = [els.fieldBedrooms, els.fieldBathrooms, els.fieldKitchens, els.fieldParking, els.fieldArea];
+  camposNumeros.forEach(campo => {
+    campo.addEventListener("input", () => {
+      if (campo.value < 0) campo.value = 0;
+      if (campo.value > 999) campo.value = 999;
+    });
+  });
+}
 
-// Load saved form data on startup
-window.addEventListener("load", () => {
-  loadFormData();
-});
+// ==================== INICIALIZAÇÃO ====================
+function inicializar() {
+  // Detectar idioma do navegador
+  const idiomaNavegador = navigator.language || navigator.userLanguage;
+  currentLang = idiomaNavegador.toLowerCase().startsWith("pt") ? "pt" : "en";
+  
+  // Aplicar idioma
+  aplicarIdioma(currentLang);
+  
+  // Configurar listener de auth
+  auth.onChange((user) => {
+    currentUser = user;
+    atualizarInterfaceAuth();
+    atualizarQuotaUI();
+    
+    if (user) {
+      mostrarStatus(`👋 Bem-vindo, ${user.name || "Usuário"}!`);
+    }
+  });
+  
+  // Carregar usuário atual
+  currentUser = auth.getCurrentUser();
+  atualizarInterfaceAuth();
+  atualizarQuotaUI();
+  
+  // Configurar aba inicial
+  clicarAba("short");
+  
+  // Configurar auto-save do formulário
+  configurarAutoSave();
+  
+  // Carregar dados demo (se primeira vez)
+  carregarDadosDemo();
+  
+  // Carregar dados salvos
+  carregarFormulario();
+  
+  // Configurar event listeners
+  configurarEventListeners();
+  
+  console.log("✅ NAGI Real Estate Assistant inicializado!");
+}
 
-// Handle page visibility changes
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    // Page became visible again, refresh quota
-    updateQuotaUI();
-  }
-});
+// Iniciar quando o DOM estiver carregado
+document.addEventListener("DOMContentLoaded", inicializar);
