@@ -19,7 +19,9 @@ const els = {
   statusMessage: document.getElementById("status-message"),
   paywallOverlay: document.getElementById("paywall-overlay"),
   upgradeBtn: document.getElementById("upgrade-btn"),
-  alreadyPaidBtn: document.getElementById("already-paid-btn"),
+  activateCodeBtn: document.getElementById("activate-code-btn"),
+  closePaywallBtn: document.getElementById("close-paywall-btn"),
+  verificationCodeInput: document.getElementById("verification-code"),
   paywallTitle: document.getElementById("paywall-title"),
   paywallText: document.getElementById("paywall-text"),
   paywallHint: document.getElementById("paywall-hint"),
@@ -40,14 +42,11 @@ const els = {
   fieldHeadline: document.getElementById("headline"),
   fieldBedrooms: document.getElementById("bedrooms"),
   fieldBathrooms: document.getElementById("bathrooms"),
-  fieldKitchens: document.getElementById("kitchens"),
-  fieldParking: document.getElementById("parking"),
   fieldArea: document.getElementById("area"),
+  fieldParking: document.getElementById("parking"),
   fieldPrice: document.getElementById("price"),
   fieldAddress: document.getElementById("address"),
-  fieldLocationContext: document.getElementById("location-context"),
   fieldHighlights: document.getElementById("highlights"),
-  fieldExtras: document.getElementById("extras"),
   fieldAudience: document.getElementById("audience"),
   fieldTone: document.getElementById("tone"),
   
@@ -56,14 +55,11 @@ const els = {
   labelHeadline: document.getElementById("label-headline"),
   labelBedrooms: document.getElementById("label-bedrooms"),
   labelBathrooms: document.getElementById("label-bathrooms"),
-  labelKitchens: document.getElementById("label-kitchens"),
-  labelParking: document.getElementById("label-parking"),
   labelArea: document.getElementById("label-area"),
+  labelParking: document.getElementById("label-parking"),
   labelPrice: document.getElementById("label-price"),
   labelAddress: document.getElementById("label-address"),
-  labelLocationContext: document.getElementById("label-location-context"),
   labelHighlights: document.getElementById("label-highlights"),
-  labelExtras: document.getElementById("label-extras"),
   labelAudience: document.getElementById("label-audience"),
   labelTone: document.getElementById("label-tone"),
   tabShort: document.getElementById("tab-short"),
@@ -79,7 +75,12 @@ let formAutoSaveTimer = null;
 
 // ==================== SISTEMA DE CÓDIGOS COM SENHA ====================
 const ADMIN_PASSWORD = "948399692Se@"; // SENHA PARA PAINEL ADMINISTRATIVO
-let CODIGOS_ATIVOS = [];
+let CODIGOS_ATIVOS = [
+  // Exemplos de códigos (você pode adicionar mais ou gerar via painel admin)
+  "123456",
+  "654321",
+  "789012"
+];
 
 // ==================== FUNÇÕES UTILITÁRIAS ====================
 function mostrarStatus(texto, erro = false) {
@@ -150,6 +151,10 @@ function atualizarInterfaceAuth() {
     if (els.generateBtn) {
       els.generateBtn.disabled = false;
     }
+    
+    if (els.copyAllBtn) {
+      els.copyAllBtn.disabled = false;
+    }
   } else {
     // Usuário não logado
     els.authArea.classList.remove("hidden");
@@ -161,6 +166,10 @@ function atualizarInterfaceAuth() {
     
     if (els.generateBtn) {
       els.generateBtn.disabled = true;
+    }
+    
+    if (els.copyAllBtn) {
+      els.copyAllBtn.disabled = true;
     }
     
     // Atualizar texto do warning
@@ -239,14 +248,11 @@ function aplicarIdioma(lang) {
     if (els.labelHeadline) els.labelHeadline.textContent = "Título / foco principal";
     if (els.labelBedrooms) els.labelBedrooms.textContent = "Quartos";
     if (els.labelBathrooms) els.labelBathrooms.textContent = "Banheiros";
-    if (els.labelKitchens) els.labelKitchens.textContent = "Cozinhas";
-    if (els.labelParking) els.labelParking.textContent = "Vagas de garagem";
     if (els.labelArea) els.labelArea.textContent = "Área (m²)";
+    if (els.labelParking) els.labelParking.textContent = "Vagas de garagem";
     if (els.labelPrice) els.labelPrice.textContent = "Valor";
     if (els.labelAddress) els.labelAddress.textContent = "Morada / localização";
-    if (els.labelLocationContext) els.labelLocationContext.textContent = "Contexto da localização";
     if (els.labelHighlights) els.labelHighlights.textContent = "Destaques e comodidades";
-    if (els.labelExtras) els.labelExtras.textContent = "Observações / informações complementares";
     if (els.labelAudience) els.labelAudience.textContent = "Público-alvo";
     if (els.labelTone) els.labelTone.textContent = "Tom da comunicação";
     
@@ -257,13 +263,14 @@ function aplicarIdioma(lang) {
     if (els.tabMedium) els.tabMedium.textContent = "Média";
     if (els.tabLong) els.tabLong.textContent = "Longa";
     if (els.signOutBtn) els.signOutBtn.textContent = "Sair";
+    if (els.upgradeBtn) els.upgradeBtn.textContent = "🛒 Comprar Plano Profissional";
+    if (els.activateCodeBtn) els.activateCodeBtn.textContent = "✅ Ativar com Código";
+    if (els.closePaywallBtn) els.closePaywallBtn.textContent = "Fechar";
     
     // Paywall
     if (els.paywallTitle) els.paywallTitle.textContent = "Atualize o seu plano";
     if (els.paywallText) els.paywallText.textContent = "Você já utilizou as 3 gerações gratuitas do NAGI REAL ESTATE ASSISTANT. Para continuar a criar descrições ilimitadas, adquira o plano profissional.";
     if (els.paywallHint) els.paywallHint.textContent = 'Após o pagamento, você receberá um código por email. Digite-o aqui para ativar seu plano.';
-    if (els.alreadyPaidBtn) els.alreadyPaidBtn.textContent = "Já paguei - Tenho um código";
-    if (els.upgradeBtn) els.upgradeBtn.textContent = "🛒 Comprar Plano Profissional";
     
     // Benefícios
     if (els.benefitsList) {
@@ -278,9 +285,8 @@ function aplicarIdioma(lang) {
     if (els.fieldHeadline) els.fieldHeadline.placeholder = "Ex.: Luxuoso T3 com vista mar e varanda ampla";
     if (els.fieldPrice) els.fieldPrice.placeholder = "Ex.: 250.000 €, R$ 800.000, 1200 €/mês";
     if (els.fieldAddress) els.fieldAddress.placeholder = "Rua, bairro, cidade, país ou zona de referência";
-    if (els.fieldLocationContext) els.fieldLocationContext.placeholder = "Próximo a escolas, praias, transportes, centros comerciais...";
     if (els.fieldHighlights) els.fieldHighlights.placeholder = "Piscina, varanda gourmet, suite, vista mar, mobiliado, condomínio com segurança 24h...";
-    if (els.fieldExtras) els.fieldExtras.placeholder = "Informações específicas, regras do condomínio, possibilidade de financiamento, etc.";
+    if (els.verificationCodeInput) els.verificationCodeInput.placeholder = "Código de 6 dígitos";
   } else {
     // Inglês
     if (els.formTitle) els.formTitle.textContent = "Smart real estate copy generator";
@@ -291,14 +297,11 @@ function aplicarIdioma(lang) {
     if (els.labelHeadline) els.labelHeadline.textContent = "Headline / main highlight";
     if (els.labelBedrooms) els.labelBedrooms.textContent = "Bedrooms";
     if (els.labelBathrooms) els.labelBathrooms.textContent = "Bathrooms";
-    if (els.labelKitchens) els.labelKitchens.textContent = "Kitchens";
-    if (els.labelParking) els.labelParking.textContent = "Parking spaces";
     if (els.labelArea) els.labelArea.textContent = "Area (m²)";
+    if (els.labelParking) els.labelParking.textContent = "Parking spaces";
     if (els.labelPrice) els.labelPrice.textContent = "Price";
     if (els.labelAddress) els.labelAddress.textContent = "Address / location";
-    if (els.labelLocationContext) els.labelLocationContext.textContent = "Location context";
     if (els.labelHighlights) els.labelHighlights.textContent = "Highlights & amenities";
-    if (els.labelExtras) els.labelExtras.textContent = "Notes / additional information";
     if (els.labelAudience) els.labelAudience.textContent = "Target audience";
     if (els.labelTone) els.labelTone.textContent = "Tone of voice";
     
@@ -308,12 +311,13 @@ function aplicarIdioma(lang) {
     if (els.tabMedium) els.tabMedium.textContent = "Standard";
     if (els.tabLong) els.tabLong.textContent = "Extended";
     if (els.signOutBtn) els.signOutBtn.textContent = "Sign out";
+    if (els.upgradeBtn) els.upgradeBtn.textContent = "🛒 Buy Professional Plan";
+    if (els.activateCodeBtn) els.activateCodeBtn.textContent = "✅ Activate with Code";
+    if (els.closePaywallBtn) els.closePaywallBtn.textContent = "Close";
     
     if (els.paywallTitle) els.paywallTitle.textContent = "Upgrade your plan";
     if (els.paywallText) els.paywallText.textContent = "You have already used the 3 free generations of NAGI REAL ESTATE ASSISTANT. To keep generating unlimited descriptions, buy the professional plan.";
     if (els.paywallHint) els.paywallHint.textContent = 'After payment, you will receive a code by email. Enter it here to activate your plan.';
-    if (els.alreadyPaidBtn) els.alreadyPaidBtn.textContent = "I paid - I have a code";
-    if (els.upgradeBtn) els.upgradeBtn.textContent = "🛒 Buy Professional Plan";
     
     if (els.benefitsList) {
       els.benefitsList.innerHTML = `
@@ -326,9 +330,8 @@ function aplicarIdioma(lang) {
     if (els.fieldHeadline) els.fieldHeadline.placeholder = "Ex.: Luxury T3 with sea view and spacious balcony";
     if (els.fieldPrice) els.fieldPrice.placeholder = "Ex.: €250,000, $800,000, €1200/month";
     if (els.fieldAddress) els.fieldAddress.placeholder = "Street, neighborhood, city, country or reference area";
-    if (els.fieldLocationContext) els.fieldLocationContext.placeholder = "Near schools, beaches, transport, shopping centers...";
     if (els.fieldHighlights) els.fieldHighlights.placeholder = "Pool, gourmet balcony, en-suite, sea view, furnished, 24h security...";
-    if (els.fieldExtras) els.fieldExtras.placeholder = "Specific information, condo rules, financing possibilities, etc.";
+    if (els.verificationCodeInput) els.verificationCodeInput.placeholder = "6-digit code";
   }
   
   atualizarQuotaUI();
@@ -360,20 +363,17 @@ function clicarAba(tab) {
 // ==================== FORMULÁRIO ====================
 function coletarDadosFormulario() {
   return {
-    type: els.fieldType ? els.fieldType.value : "imóvel",
+    type: els.fieldType ? els.fieldType.value : "apartamento",
     headline: els.fieldHeadline ? els.fieldHeadline.value : "",
     bedrooms: els.fieldBedrooms ? parseInt(els.fieldBedrooms.value) || 0 : 0,
     bathrooms: els.fieldBathrooms ? parseInt(els.fieldBathrooms.value) || 0 : 0,
-    kitchens: els.fieldKitchens ? parseInt(els.fieldKitchens.value) || 0 : 0,
-    parking: els.fieldParking ? parseInt(els.fieldParking.value) || 0 : 0,
     area: els.fieldArea ? parseInt(els.fieldArea.value) || 0 : 0,
+    parking: els.fieldParking ? parseInt(els.fieldParking.value) || 0 : 0,
     price: els.fieldPrice ? els.fieldPrice.value : "",
-    address: els.fieldAddress ? els.fieldAddress.value : "",
-    locationContext: els.fieldLocationContext ? els.fieldLocationContext.value : "",
+    location: els.fieldAddress ? els.fieldAddress.value : "",
     highlights: els.fieldHighlights ? els.fieldHighlights.value : "",
-    extras: els.fieldExtras ? els.fieldExtras.value : "",
-    audience: els.fieldAudience ? els.fieldAudience.value : "geral",
-    tone: els.fieldTone ? els.fieldTone.value : "encantador"
+    audience: els.fieldAudience ? els.fieldAudience.value : "familias",
+    tone: els.fieldTone ? els.fieldTone.value : "profissional"
   };
 }
 
@@ -385,8 +385,7 @@ function validarDadosFormulario(dados) {
     dados.bedrooms > 0 ||
     dados.bathrooms > 0 ||
     dados.area > 0 ||
-    dados.address.trim() ||
-    dados.locationContext.trim() ||
+    dados.location.trim() ||
     dados.highlights.trim()
   );
 }
@@ -411,16 +410,13 @@ function carregarFormulario() {
     if (els.fieldHeadline) els.fieldHeadline.value = data.headline || "";
     if (els.fieldBedrooms) els.fieldBedrooms.value = data.bedrooms || "";
     if (els.fieldBathrooms) els.fieldBathrooms.value = data.bathrooms || "";
-    if (els.fieldKitchens) els.fieldKitchens.value = data.kitchens || "";
-    if (els.fieldParking) els.fieldParking.value = data.parking || "";
     if (els.fieldArea) els.fieldArea.value = data.area || "";
+    if (els.fieldParking) els.fieldParking.value = data.parking || "";
     if (els.fieldPrice) els.fieldPrice.value = data.price || "";
-    if (els.fieldAddress) els.fieldAddress.value = data.address || "";
-    if (els.fieldLocationContext) els.fieldLocationContext.value = data.locationContext || "";
+    if (els.fieldAddress) els.fieldAddress.value = data.location || "";
     if (els.fieldHighlights) els.fieldHighlights.value = data.highlights || "";
-    if (els.fieldExtras) els.fieldExtras.value = data.extras || "";
-    if (els.fieldAudience) els.fieldAudience.value = data.audience || "geral";
-    if (els.fieldTone) els.fieldTone.value = data.tone || "encantador";
+    if (els.fieldAudience) els.fieldAudience.value = data.audience || "familias";
+    if (els.fieldTone) els.fieldTone.value = data.tone || "profissional";
     
     return true;
   } catch (error) {
@@ -432,9 +428,8 @@ function carregarFormulario() {
 function configurarAutoSave() {
   const formElements = [
     els.fieldType, els.fieldHeadline, els.fieldBedrooms, els.fieldBathrooms,
-    els.fieldKitchens, els.fieldParking, els.fieldArea, els.fieldPrice,
-    els.fieldAddress, els.fieldLocationContext, els.fieldHighlights,
-    els.fieldExtras, els.fieldAudience, els.fieldTone
+    els.fieldArea, els.fieldParking, els.fieldPrice, els.fieldAddress,
+    els.fieldHighlights, els.fieldAudience, els.fieldTone
   ].filter(el => el !== null);
   
   formElements.forEach(element => {
@@ -458,22 +453,15 @@ function carregarDadosDemo() {
       : "Luxury T3 with sea view and spacious balcony";
     if (els.fieldBedrooms) els.fieldBedrooms.value = "3";
     if (els.fieldBathrooms) els.fieldBathrooms.value = "2";
-    if (els.fieldKitchens) els.fieldKitchens.value = "1";
-    if (els.fieldParking) els.fieldParking.value = "1";
     if (els.fieldArea) els.fieldArea.value = "120";
+    if (els.fieldParking) els.fieldParking.value = "1";
     if (els.fieldPrice) els.fieldPrice.value = currentLang === "pt" ? "350.000 €" : "€350,000";
     if (els.fieldAddress) els.fieldAddress.value = currentLang === "pt" ? "Zona Ribeirinha, Lisboa" : "Riverside Area, Lisbon";
-    if (els.fieldLocationContext) els.fieldLocationContext.value = currentLang === "pt" 
-      ? "Próximo ao centro comercial, transporte público e escolas" 
-      : "Near shopping center, public transport and schools";
     if (els.fieldHighlights) els.fieldHighlights.value = currentLang === "pt"
       ? "Vista mar, varanda gourmet, cozinha equipada, ar condicionado"
       : "Sea view, gourmet balcony, equipped kitchen, air conditioning";
-    if (els.fieldExtras) els.fieldExtras.value = currentLang === "pt"
-      ? "Condomínio com piscina e ginásio. Possibilidade de financiamento bancário."
-      : "Condominium with pool and gym. Bank financing available.";
     if (els.fieldAudience) els.fieldAudience.value = "familias";
-    if (els.fieldTone) els.fieldTone.value = "premium";
+    if (els.fieldTone) els.fieldTone.value = "profissional";
     
     localStorage.setItem("nagi_first_visit", "completed");
     salvarFormulario();
@@ -527,19 +515,11 @@ async function gerarConteudo() {
     salvarFormulario();
     
     // Mostrar mensagem de sucesso
-    if (billing.isPaywalled(currentUser)) {
-      mostrarStatus(
-        currentLang === "pt"
-          ? "Limite gratuito atingido. Adquira o plano para continuar."
-          : "Free limit reached. Purchase plan to continue."
-      );
-    } else {
-      mostrarStatus(
-        currentLang === "pt"
-          ? "✅ Descrições geradas com sucesso!"
-          : "✅ Descriptions generated successfully!"
-      );
-    }
+    mostrarStatus(
+      currentLang === "pt"
+        ? "✅ Descrições geradas com sucesso!"
+        : "✅ Descriptions generated successfully!"
+    );
     
   } catch (error) {
     console.error("Erro na geração:", error);
@@ -571,10 +551,14 @@ async function gerarConteudo() {
 async function copiarTodoConteudo() {
   if (!els.outputs.short || !els.outputs.medium || !els.outputs.long) return;
   
+  const short = els.outputs.short.textContent.trim();
+  const medium = els.outputs.medium.textContent.trim();
+  const long = els.outputs.long.textContent.trim();
+  
   const combined = [
-    els.outputs.short.textContent.trim(),
-    els.outputs.medium.textContent.trim(),
-    els.outputs.long.textContent.trim()
+    short,
+    medium,
+    long
   ]
     .filter(text => text.length > 0)
     .join("\n\n---\n\n");
@@ -636,6 +620,10 @@ function mostrarPaywall() {
   if (els.paywallOverlay) {
     els.paywallOverlay.classList.remove("hidden");
     document.body.style.overflow = "hidden";
+    // Limpar campo de código
+    if (els.verificationCodeInput) {
+      els.verificationCodeInput.value = "";
+    }
   }
 }
 
@@ -646,91 +634,43 @@ function esconderPaywall() {
   }
 }
 
-// ==================== VERIFICAÇÃO DE CÓDIGO ====================
-function mostrarVerificacaoCodigo() {
-  const modal = document.createElement("div");
-  modal.className = "overlay";
-  modal.style.zIndex = "1001";
+function verificarCodigoAtivacao() {
+  const codigo = els.verificationCodeInput ? els.verificationCodeInput.value.trim() : "";
   
-  modal.innerHTML = `
-    <div class="overlay-content" style="max-width: 400px; text-align: center;">
-      <h2 style="color: #f97316;">🔑 ATIVAR PLANO PROFISSIONAL</h2>
-      <p style="margin-bottom: 20px;">
-        Digite o código de 6 dígitos que você recebeu após o pagamento.
-      </p>
-      
-      <input type="text" 
-             id="code-input" 
-             placeholder="Ex: 123456"
-             style="width: 100%; padding: 15px; font-size: 20px; text-align: center; border-radius: 8px; border: 2px solid #f97316; margin-bottom: 20px; letter-spacing: 3px;"
-             maxlength="6"
-             inputmode="numeric">
-      
-      <button id="activate-btn" class="primary-btn" style="padding: 12px 24px; font-size: 16px; margin-right: 10px;">
-        ✅ ATIVAR PLANO
-      </button>
-      
-      <button id="cancel-btn" class="ghost-btn" style="padding: 12px 24px; font-size: 16px;">
-        ❌ CANCELAR
-      </button>
-      
-      <div style="margin-top: 20px; padding: 15px; background: rgba(249, 115, 22, 0.1); border-radius: 8px;">
-        <p style="margin: 0; font-size: 14px; color: #fb923c;">
-          <strong>Não tem código?</strong><br>
-          Envie um email para <strong>suporte@seudominio.com</strong>
-        </p>
-      </div>
-    </div>
-  `;
+  if (!codigo || codigo.length !== 6) {
+    mostrarStatus(
+      currentLang === "pt"
+        ? "Por favor, digite um código válido de 6 dígitos."
+        : "Please enter a valid 6-digit code.",
+      true
+    );
+    return;
+  }
   
-  document.body.appendChild(modal);
-  
-  const activateBtn = modal.querySelector("#activate-btn");
-  const cancelBtn = modal.querySelector("#cancel-btn");
-  const codeInput = modal.querySelector("#code-input");
-  
-  // Função para verificar código
-  const verifyCode = () => {
-    const code = codeInput.value.trim();
+  // Verificar se o código está na lista
+  const index = CODIGOS_ATIVOS.indexOf(codigo);
+  if (index !== -1) {
+    // Código válido - remover da lista e ativar plano
+    CODIGOS_ATIVOS.splice(index, 1);
+    billing.activateMonthlyPlan(currentUser);
+    atualizarQuotaUI();
+    esconderPaywall();
     
-    if (code.length !== 6 || !/^\d+$/.test(code)) {
-      mostrarStatus("Por favor, digite um código válido de 6 dígitos.", true);
-      return;
-    }
-    
-    // Verificar se o código está na lista
-    const codeIndex = CODIGOS_ATIVOS.indexOf(code);
-    if (codeIndex !== -1) {
-      // Código válido - remover da lista e ativar plano
-      CODIGOS_ATIVOS.splice(codeIndex, 1);
-      billing.activatePlan(currentUser);
-      atualizarQuotaUI();
-      esconderPaywall();
-      document.body.removeChild(modal);
-      mostrarStatus("✅ Plano ativado com sucesso!");
-    } else {
-      mostrarStatus("❌ Código inválido. Verifique e tente novamente.", true);
-    }
-  };
-  
-  // Event listeners
-  activateBtn.addEventListener("click", verifyCode);
-  
-  cancelBtn.addEventListener("click", () => {
-    document.body.removeChild(modal);
-  });
-  
-  codeInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      verifyCode();
-    }
-  });
-  
-  // Focar no input
-  setTimeout(() => codeInput.focus(), 100);
+    mostrarStatus(
+      currentLang === "pt"
+        ? "✅ Plano ativado com sucesso! Agora você tem gerações ilimitadas."
+        : "✅ Plan activated successfully! You now have unlimited generations."
+    );
+  } else {
+    mostrarStatus(
+      currentLang === "pt"
+        ? "❌ Código inválido. Verifique e tente novamente."
+        : "❌ Invalid code. Please check and try again.",
+      true
+    );
+  }
 }
 
-// ==================== LINK DE PAGAMENTO ====================
 function abrirLinkPagamento() {
   if (!currentUser) {
     mostrarStatus("Faça login primeiro para comprar o plano.", true);
@@ -741,7 +681,12 @@ function abrirLinkPagamento() {
   const paymentLink = "https://www.paypal.com/ncp/payment/YBLWPYKEZBBZC";
   
   window.open(paymentLink, "_blank");
-  mostrarStatus("Redirecionando para página de pagamento...");
+  
+  mostrarStatus(
+    currentLang === "pt"
+      ? "Redirecionando para página de pagamento..."
+      : "Redirecting to payment page..."
+  );
 }
 
 // ==================== PAINEL ADMINISTRATIVO PROTEGIDO ====================
@@ -947,14 +892,26 @@ function configurarEventListeners() {
     });
   }
   
-  // Botão "Já paguei"
-  if (els.alreadyPaidBtn) {
-    els.alreadyPaidBtn.addEventListener("click", mostrarVerificacaoCodigo);
-  }
-  
-  // Botão "Comprar Plano"
+  // Paywall
   if (els.upgradeBtn) {
     els.upgradeBtn.addEventListener("click", abrirLinkPagamento);
+  }
+  
+  if (els.activateCodeBtn) {
+    els.activateCodeBtn.addEventListener("click", verificarCodigoAtivacao);
+  }
+  
+  if (els.closePaywallBtn) {
+    els.closePaywallBtn.addEventListener("click", esconderPaywall);
+  }
+  
+  // Permitir ativar código com Enter
+  if (els.verificationCodeInput) {
+    els.verificationCodeInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        verificarCodigoAtivacao();
+      }
+    });
   }
   
   // Fechar paywall ao clicar fora
@@ -975,8 +932,7 @@ function configurarEventListeners() {
   
   // Validação de campos numéricos
   const numberFields = [
-    els.fieldBedrooms, els.fieldBathrooms, els.fieldKitchens, 
-    els.fieldParking, els.fieldArea
+    els.fieldBedrooms, els.fieldBathrooms, els.fieldArea, els.fieldParking
   ].filter(field => field !== null);
   
   numberFields.forEach(field => {

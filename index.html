@@ -117,8 +117,8 @@
                                 <input id="price" type="text" placeholder="Ex: 250.000 €">
                             </div>
                             <div class="field-group">
-                                <label for="location" id="label-location">Localização</label>
-                                <input id="location" type="text" placeholder="Bairro, Cidade">
+                                <label for="address" id="label-address">Localização</label>
+                                <input id="address" type="text" placeholder="Bairro, Cidade">
                             </div>
                         </div>
                         
@@ -207,32 +207,28 @@
                     </ul>
                 </div>
                 
-                <div id="paypal-button-container"></div>
-                
-                <div class="payment-verification hidden" id="payment-verification">
-                    <h3>Verificar Pagamento</h3>
-                    <p>Digite o código recebido por email após o pagamento:</p>
-                    <input type="text" id="verification-code" placeholder="Código de 6 dígitos" maxlength="6">
-                    <!-- NO LUGAR DO BOTÃO PAYPAL ANTIGO -->
-<button id="upgrade-btn" class="primary-btn full-width upgrade-btn">
-  🛒 Comprar Plano Profissional
-</button>
-                    <p class="hint" id="verification-hint"></p>
-                </div>
-                
-                <button id="already-paid-btn" class="ghost-btn full-width">
-                    Já efetuei o pagamento
+                <button id="upgrade-btn" class="primary-btn full-width" style="margin-bottom: 16px;">
+                    🛒 Comprar Plano Profissional
                 </button>
                 
-                <p class="hint" id="paywall-hint">
-                    Após o pagamento, você receberá um código de ativação por email.
-                </p>
+                <div class="payment-verification" id="payment-verification">
+                    <h3>Verificar Pagamento</h3>
+                    <p>Digite o código recebido por email após o pagamento:</p>
+                    <input type="text" id="verification-code" placeholder="Código de 6 dígitos" maxlength="6" style="width: 100%; padding: 12px; font-size: 18px; text-align: center; letter-spacing: 3px; margin: 12px 0;">
+                    <button id="activate-code-btn" class="ghost-btn full-width" style="margin-bottom: 8px;">
+                        ✅ Ativar com Código
+                    </button>
+                    <p class="hint" id="paywall-hint">
+                        Após o pagamento, você receberá um código de ativação por email.
+                    </p>
+                </div>
+                
+                <button id="close-paywall-btn" class="ghost-btn full-width">
+                    Fechar
+                </button>
             </div>
         </div>
     </div>
-    
-    <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=test&currency=EUR" data-namespace="paypal_sdk"></script>
     
     <script type="module" src="app.js"></script>
 </body>
