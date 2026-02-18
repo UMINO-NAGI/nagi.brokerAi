@@ -1,8 +1,3 @@
-/* style.css */
-body {
-    font-family: 'Inter', sans-serif;
-}
-
 .gradient-text {
     background: linear-gradient(135deg, #a78bfa, #ec4899);
     -webkit-background-clip: text;

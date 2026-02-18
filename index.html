@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NAGI BROKER AI · Assistente Imobiliário</title>
-    <!-- Tailwind CSS -->
+    <title>NAGI BROKER AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- CSS personalizado -->
     <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK (modular) – importado via importmap no script -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
+                "firebase/analytics": "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js"
+            }
+        }
+    </script>
 </head>
 <body class="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-    <!-- Header (pode ser simples) -->
     <header class="w-full p-6 flex justify-between items-center">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-2xl">
@@ -25,7 +30,7 @@
     </header>
 
     <main class="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
-        <!-- TELA DE BOAS-VINDAS (inicial) -->
+        <!-- Tela de boas-vindas -->
         <div id="welcome-screen" class="text-center max-w-2xl">
             <h2 class="text-5xl font-extrabold mb-6 gradient-text">Bem-vindo ao NAGI BROKER AI</h2>
             <p class="text-xl text-gray-300 mb-8">O assistente definitivo para corretores de imóveis. Gere descrições, roteiros e muito mais com inteligência artificial.</p>
@@ -35,40 +40,23 @@
             <p class="text-sm text-gray-500 mt-6">Ao continuar, você concorda com nossos termos de uso.</p>
         </div>
 
-        <!-- Loader (inicialmente oculto, mas pode ser usado durante transições) -->
+        <!-- Loader -->
         <div id="loading-screen" class="hidden flex-col items-center">
             <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-500 border-solid mb-4"></div>
             <p class="text-gray-400">Carregando...</p>
         </div>
 
-        <!-- TELA DE PLANOS (oculta inicialmente) -->
-        <div id="plans-screen" class="hidden w-full">
-            <!-- conteúdo dos planos -->
-        </div>
+        <!-- Tela de planos -->
+        <div id="plans-screen" class="hidden w-full"></div>
 
-        <!-- DASHBOARD (oculto inicialmente) -->
-        <div id="dashboard-screen" class="hidden w-full">
-            <!-- conteúdo do dashboard -->
-        </div>
+        <!-- Dashboard -->
+        <div id="dashboard-screen" class="hidden w-full"></div>
     </main>
 
-    <!-- Rodapé fixo -->
     <footer class="footer-note">
         UMINO NAGI - I WAS HERE🍀 · Propriedade da NAGI TECHNOLOGY S.A.
     </footer>
 
-    <!-- Import map para Firebase -->
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
-                "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js",
-                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
-                "firebase/analytics": "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js"
-            }
-        }
-    </script>
-    <!-- Nosso script principal -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
