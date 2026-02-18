@@ -1,62 +1,485 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NAGI BROKER AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>NAGI BROKER AI • Assistente Imobiliário</title>
+    <!-- Bootstrap 5 + Ícones + Fonte Inter -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body {
+            background: #0a0c0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: #10b981 !important;
+        }
+        .nagi-tag {
+            color: #9ca3af;
+            border-left: 2px solid #10b981;
+            padding-left: 1rem;
+        }
+        .price-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 24px;
+            padding: 2rem 1.5rem;
+            transition: 0.2s;
+        }
+        .price-card:hover {
+            border-color: #10b981;
+            box-shadow: 0 20px 30px -10px rgba(16,185,129,0.2);
+            transform: translateY(-4px);
+        }
+        .price-card .price {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+        .btn-outline-emerald {
+            border: 2px solid #10b981;
+            color: #10b981;
+            border-radius: 50px;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            background: transparent;
+        }
+        .btn-outline-emerald:hover {
+            background: #10b981;
+            color: #0a0c0f;
+        }
+        .btn-emerald {
+            background: #10b981;
+            color: #0a0c0f;
+            font-weight: 600;
+            border-radius: 50px;
+            padding: 0.75rem 2rem;
+            border: none;
+        }
+        .btn-emerald:hover {
+            background: #0f9b6e;
+            color: #fff;
+        }
+        .form-control, .form-select {
+            background-color: #1f2937;
+            border: 1.5px solid #374151;
+            border-radius: 16px;
+            color: #f3f4f6;
+            padding: 12px 18px;
+        }
+        .form-control:focus {
+            background-color: #1f2937;
+            border-color: #10b981;
+            box-shadow: 0 0 0 0.25rem rgba(16,185,129,0.2);
+            color: #fff;
+        }
+        label {
+            font-weight: 600;
+            color: #d1d5db;
+            margin-bottom: 6px;
+            margin-left: 6px;
+        }
+        footer {
+            background: #111318;
+            border-top: 1px solid #1f2937;
+            padding: 1.5rem 0;
+            margin-top: auto;
+            text-align: center;
+            color: #6b7280;
+        }
+        .login-container {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass-card {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid #374151;
+            border-radius: 48px;
+            padding: 4rem 3rem;
+            text-align: center;
+            box-shadow: 0 30px 50px -20px #000;
+        }
+        .hidden { display: none !important; }
+        .badge-status {
+            background: #1f2937;
+            color: #fbbf24;
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+        }
+        .ferramenta-card {
+            background: #1f2937;
+            border-radius: 24px;
+            padding: 1.5rem;
+            height: 100%;
+            border: 1px solid #374151;
+            transition: 0.2s;
+        }
+        .ferramenta-card:hover {
+            border-color: #10b981;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark px-3 px-md-5 py-3">
+        <div class="container-fluid">
+            <span class="navbar-brand">NAGI BROKER AI</span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="nagi-tag d-none d-md-block">NAGI TECHNOLOGY S.A</span>
+                <button class="btn btn-outline-secondary btn-sm d-none" id="logoutBtn">
+                    <i class="bi bi-box-arrow-right"></i> Sair
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo principal -->
+    <main class="container my-4 flex-grow-1">
+        <!-- Tela de login inicial -->
+        <div id="loginScreen" class="login-container">
+            <div class="glass-card">
+                <div class="display-4 fw-bold text-success mb-4">NAGI BROKER AI</div>
+                <p class="text-secondary mb-4">Faça login para acessar o assistente imobiliário</p>
+                <button class="btn btn-light btn-lg px-5 py-3 rounded-pill" id="googleLoginBtn">
+                    <i class="bi bi-google me-2"></i> Entrar com Google
+                </button>
+            </div>
+        </div>
+
+        <!-- Painel principal (pós-login) -->
+        <div id="dashboard" class="hidden">
+            <div class="d-flex flex-wrap align-items-center justify-content-between mb-5">
+                <h2 class="fw-bold text-success">
+                    <i class="bi bi-grid-fill me-2"></i>Painel de Controle
+                </h2>
+                <div class="badge-status" id="statusBadge">
+                    <i class="bi bi-circle-fill me-1" style="color: #fbbf24; font-size: 0.7rem;"></i>
+                    <span id="statusText">Carregando...</span>
+                </div>
+            </div>
+
+            <!-- Área de planos (exibida se assinatura pendente) -->
+            <div id="assinaturaArea" class="mb-5">
+                <h3 class="h4 mb-4">Escolha seu plano</h3>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="price-card">
+                            <h5 class="fw-bold">Starter</h5>
+                            <div class="price">R$19,99</div>
+                            <p class="text-secondary">Ideal para começar</p>
+                            <a href="https://www.paypal.com/ncp/payment/3ZTZRT45ZN9JN" target="_blank" class="btn btn-outline-emerald w-100">
+                                <i class="bi bi-paypal me-2"></i>Assinar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="price-card">
+                            <h5 class="fw-bold">Business</h5>
+                            <div class="price">R$49,99</div>
+                            <p class="text-secondary">Recursos avançados</p>
+                            <a href="https://www.paypal.com/ncp/payment/RUTJGDGJC6KWJ" target="_blank" class="btn btn-outline-emerald w-100">
+                                <i class="bi bi-paypal me-2"></i>Assinar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="price-card">
+                            <h5 class="fw-bold">VIP Anual</h5>
+                            <div class="price">R$199,00</div>
+                            <p class="text-secondary">Melhor custo-benefício</p>
+                            <a href="https://www.paypal.com/ncp/payment/GJXBFRS63YESE" target="_blank" class="btn btn-outline-emerald w-100">
+                                <i class="bi bi-paypal me-2"></i>Assinar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-secondary mt-4 small">
+                    * Após o pagamento, seu status será atualizado manualmente. Acompanhe pelo e-mail.
+                </p>
+            </div>
+
+            <!-- Área de ferramentas (exibida se assinatura ativa) -->
+            <div id="ferramentasArea" class="hidden">
+                <h3 class="h4 mb-4 text-success">Ferramentas de IA</h3>
+                <div class="row g-4">
+                    <!-- Descrição Persuasiva -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="ferramenta-card">
+                            <h5 class="fw-bold"><i class="bi bi-pencil-square me-2"></i>Descrição Persuasiva</h5>
+                            <p class="text-secondary small">Gere textos de venda com gatilhos mentais.</p>
+                            <button class="btn btn-sm btn-outline-emerald mt-2" data-bs-toggle="modal" data-bs-target="#modalDescricao">Usar</button>
+                        </div>
+                    </div>
+                    <!-- Roteiro para Vídeo -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="ferramenta-card">
+                            <h5 class="fw-bold"><i class="bi bi-camera-reels me-2"></i>Roteiro para Vídeo</h5>
+                            <p class="text-secondary small">Crie roteiros para Reels/TikTok.</p>
+                            <button class="btn btn-sm btn-outline-emerald mt-2" data-bs-toggle="modal" data-bs-target="#modalRoteiro">Usar</button>
+                        </div>
+                    </div>
+                    <!-- Quebra de Objeções -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="ferramenta-card">
+                            <h5 class="fw-bold"><i class="bi bi-chat-dots me-2"></i>Quebra de Objeções</h5>
+                            <p class="text-secondary small">Receba argumentos para objeções de clientes.</p>
+                            <button class="btn btn-sm btn-outline-emerald mt-2" data-bs-toggle="modal" data-bs-target="#modalObjecoes">Usar</button>
+                        </div>
+                    </div>
+                    <!-- Ficha Técnica -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="ferramenta-card">
+                            <h5 class="fw-bold"><i class="bi bi-file-text me-2"></i>Ficha Técnica</h5>
+                            <p class="text-secondary small">Organize anotações em uma lista profissional.</p>
+                            <button class="btn btn-sm btn-outline-emerald mt-2" data-bs-toggle="modal" data-bs-target="#modalFicha">Usar</button>
+                        </div>
+                    </div>
+                    <!-- Legenda de Foto -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="ferramenta-card">
+                            <h5 class="fw-bold"><i class="bi bi-image me-2"></i>Legenda de Foto</h5>
+                            <p class="text-secondary small">Crie legendas atrativas para fotos.</p>
+                            <button class="btn btn-sm btn-outline-emerald mt-2" data-bs-toggle="modal" data-bs-target="#modalLegenda">Usar</button>
+                        </div>
+                    </div>
+                    <!-- Extrator de Dados -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="ferramenta-card">
+                            <h5 class="fw-bold"><i class="bi bi-database me-2"></i>Extrator de Dados</h5>
+                            <p class="text-secondary small">Extraia informações técnicas de textos brutos.</p>
+                            <button class="btn btn-sm btn-outline-emerald mt-2" data-bs-toggle="modal" data-bs-target="#modalExtrator">Usar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Container de alertas -->
+        <div id="alertaContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1100;"></div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer>
+        <div class="container">
+            <span>UMINO NAGI - I WAS HERE 🍀</span>
+        </div>
+    </footer>
+
+    <!-- Modais para cada ferramenta (simplificados) -->
+    <div class="modal fade" id="modalDescricao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Descrição Persuasiva</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea class="form-control" rows="5" placeholder="Descreva o imóvel (ex: 3 quartos, 120m², vista mar...)"></textarea>
+                    <div class="mt-3 d-flex gap-2">
+                        <select class="form-select w-auto">
+                            <option value="curto">Curto</option>
+                            <option value="medio" selected>Médio</option>
+                            <option value="longo">Longo</option>
+                        </select>
+                        <select class="form-select w-auto">
+                            <option value="pt">Português</option>
+                            <option value="en">Inglês</option>
+                        </select>
+                        <button class="btn btn-emerald" id="gerarDescricao">Gerar</button>
+                    </div>
+                    <div class="mt-4 p-3 bg-black rounded" id="resultadoDescricao"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- (demais modais seriam similares, omitidos por brevidade) -->
+
+    <!-- Import map para Firebase -->
     <script type="importmap">
         {
             "imports": {
                 "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
                 "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js",
-                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
-                "firebase/analytics": "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js"
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js"
             }
         }
     </script>
-</head>
-<body class="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-    <header class="w-full p-6 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-2xl">
-                <span class="text-2xl font-black text-white">N</span>
-            </div>
-            <h1 class="text-2xl font-bold"><span class="gradient-text">NAGI</span> BROKER AI</h1>
-        </div>
-        <div id="auth-section" class="flex items-center gap-4"></div>
-    </header>
 
-    <main class="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
-        <!-- Tela de boas-vindas -->
-        <div id="welcome-screen" class="text-center max-w-2xl">
-            <h2 class="text-5xl font-extrabold mb-6 gradient-text">Bem-vindo ao NAGI BROKER AI</h2>
-            <p class="text-xl text-gray-300 mb-8">O assistente definitivo para corretores de imóveis. Gere descrições, roteiros e muito mais com inteligência artificial.</p>
-            <button id="welcome-login-btn" class="btn-primary text-2xl px-12 py-6 rounded-2xl shadow-2xl transform hover:scale-105 transition">
-                🔑 Fazer login com Google
-            </button>
-            <p class="text-sm text-gray-500 mt-6">Ao continuar, você concorda com nossos termos de uso.</p>
-        </div>
+    <script type="module">
+        // ------------------------------------------------------
+        // 1. CONFIGURAÇÃO DO FIREBASE (usando dados do arquivo APIs)
+        // ------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfkl_aCIE35eZQKDYfVqe5Wu8XJrqMNYM",
+            authDomain: "nagibrokerai.firebaseapp.com",
+            projectId: "nagibrokerai",
+            storageBucket: "nagibrokerai.firebasestorage.app",
+            messagingSenderId: "682836610499",
+            appId: "1:682836610499:web:6d909603e36159df404176",
+            measurementId: "G-5KQMSN8FZV"
+        };
 
-        <!-- Loader -->
-        <div id="loading-screen" class="hidden flex-col items-center">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-500 border-solid mb-4"></div>
-            <p class="text-gray-400">Carregando...</p>
-        </div>
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-        <!-- Tela de planos -->
-        <div id="plans-screen" class="hidden w-full"></div>
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        const db = getFirestore(app);
 
-        <!-- Dashboard -->
-        <div id="dashboard-screen" class="hidden w-full"></div>
-    </main>
+        // ------------------------------------------------------
+        // 2. ELEMENTOS DOM
+        // ------------------------------------------------------
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
+        const assinaturaArea = document.getElementById('assinaturaArea');
+        const ferramentasArea = document.getElementById('ferramentasArea');
+        const statusText = document.getElementById('statusText');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const alertaContainer = document.getElementById('alertaContainer');
 
-    <footer class="footer-note">
-        UMINO NAGI - I WAS HERE🍀 · Propriedade da NAGI TECHNOLOGY S.A.
-    </footer>
+        // ------------------------------------------------------
+        // 3. FUNÇÕES AUXILIARES
+        // ------------------------------------------------------
+        function mostrarAlerta(mensagem, tipo = 'success') {
+            const alerta = document.createElement('div');
+            alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+            alerta.role = 'alert';
+            alerta.innerHTML = `
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertaContainer.innerHTML = '';
+            alertaContainer.appendChild(alerta);
+            setTimeout(() => alerta.remove(), 4000);
+        }
 
-    <script type="module" src="app.js"></script>
+        // ------------------------------------------------------
+        // 4. GERENCIAMENTO DE USUÁRIO E STATUS
+        // ------------------------------------------------------
+        async function verificarOuCriarUsuario(user) {
+            const userRef = doc(db, 'usuarios', user.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                // Primeiro login: cria com status 'pendente'
+                await setDoc(userRef, {
+                    email: user.email,
+                    nome: user.displayName,
+                    foto: user.photoURL,
+                    statusAssinatura: 'pendente',
+                    criadoEm: serverTimestamp(),
+                });
+                return 'pendente';
+            } else {
+                return userSnap.data().statusAssinatura || 'pendente';
+            }
+        }
+
+        function atualizarUIComStatus(status) {
+            if (status === 'ativo') {
+                assinaturaArea.classList.add('hidden');
+                ferramentasArea.classList.remove('hidden');
+                statusText.innerText = 'Assinatura Ativa';
+            } else {
+                assinaturaArea.classList.remove('hidden');
+                ferramentasArea.classList.add('hidden');
+                if (status === 'pendente') statusText.innerText = 'Assinatura Pendente';
+                else if (status === 'expirado') statusText.innerText = 'Assinatura Expirada';
+                else statusText.innerText = 'Status Desconhecido';
+            }
+        }
+
+        // ------------------------------------------------------
+        // 5. LOGIN E LOGOUT
+        // ------------------------------------------------------
+        googleLoginBtn.addEventListener('click', async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error('Erro no login:', error);
+                mostrarAlerta('Erro ao fazer login: ' + error.message, 'danger');
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                mostrarAlerta('Desconectado', 'success');
+            } catch (error) {
+                console.error('Erro no logout:', error);
+            }
+        });
+
+        // Observador de autenticação
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Usuário logado
+                loginScreen.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                logoutBtn.classList.remove('d-none');
+                const status = await verificarOuCriarUsuario(user);
+                atualizarUIComStatus(status);
+            } else {
+                // Usuário deslogado
+                loginScreen.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                logoutBtn.classList.add('d-none');
+            }
+        });
+
+        // ------------------------------------------------------
+        // 6. INTEGRAÇÃO COM DEEPSEEK (exemplo para uma ferramenta)
+        // ------------------------------------------------------
+        const DEEPSEEK_API_KEY = "sk-d5808163e0ed4acbad4cf892b1a554f9";
+
+        document.getElementById('gerarDescricao')?.addEventListener('click', async () => {
+            const input = document.querySelector('#modalDescricao textarea').value;
+            const tamanho = document.querySelector('#modalDescricao select:nth-of-type(1)').value;
+            const idioma = document.querySelector('#modalDescricao select:nth-of-type(2)').value;
+            if (!input) return mostrarAlerta('Preencha a descrição', 'warning');
+
+            let prompt = `Crie uma descrição persuasiva de imóvel em ${idioma === 'pt' ? 'português' : 'inglês'}, com tamanho ${tamanho}, baseada em: ${input}`;
+            document.getElementById('resultadoDescricao').innerText = 'Gerando...';
+
+            try {
+                const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7,
+                        max_tokens: 500
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('resultadoDescricao').innerText = data.choices[0].message.content;
+            } catch (error) {
+                console.error(error);
+                document.getElementById('resultadoDescricao').innerText = 'Erro ao gerar.';
+            }
+        });
+    </script>
+
+    <!-- Bootstrap JS (para modais) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
