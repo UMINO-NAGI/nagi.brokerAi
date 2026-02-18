@@ -1,230 +1,472 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>NAGI BROKER AI - Assistente Imobiliário Inteligente</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script type="importmap">
-    {
-        "imports": {
-            "nanoid": "https://esm.sh/nanoid@5"
+    <title>NAGI BROKER AI · Assistente Imobiliário</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter e Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0b1120 0%, #1a1f2e 100%);
+            color: #fff;
+            min-height: 100vh;
         }
-    }
-    </script>
-    
-    <link rel="stylesheet" href="style.css">
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            transition: all 0.3s ease;
+            border: none;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(168, 85, 247, 0.4);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #4f46e5, #9333ea);
+            color: white;
+        }
+        .footer-note {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
+            padding: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
 </head>
-<body>
-    <div id="app-root">
-        <header class="app-header">
-            <div class="brand">
-                <span class="logo-dot"></span>
-                <span class="brand-text-main">NAGI BROKER AI</span>
-                <span class="brand-text-sub">Assistente Imobiliário</span>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="w-full p-6 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-2xl">
+                <span class="text-2xl font-black text-white">N</span>
             </div>
-            
-            <div class="header-right">
-                <div class="lang-toggle" id="lang-toggle">
-                    <button data-lang="pt" class="lang-btn active">PT</button>
-                    <button data-lang="en" class="lang-btn">EN</button>
+            <h1 class="text-2xl font-bold"><span class="gradient-text">NAGI</span> BROKER AI</h1>
+        </div>
+        <div id="auth-section" class="flex items-center gap-4">
+            <!-- Preenchido via JS -->
+        </div>
+    </header>
+
+    <main class="flex-1 container mx-auto px-4 py-8">
+        <!-- Loader -->
+        <div id="loading-screen" class="flex justify-center items-center h-64">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-500 border-solid"></div>
+        </div>
+
+        <!-- TELA DE PLANOS (exibida se não tiver assinatura ativa) -->
+        <div id="plans-screen" class="hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
+                    <span class="gradient-text">Desbloqueie o Poder da IA</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">Escolha o plano ideal para turbinar suas vendas imobiliárias</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Mensal -->
+                <div class="glass-card p-8 flex flex-col items-center text-center">
+                    <h3 class="text-2xl font-bold mb-2">Mensal</h3>
+                    <p class="text-5xl font-black mb-4">R$19,<span class="text-2xl">99</span></p>
+                    <p class="text-gray-400 mb-6">por mês, cancela quando quiser</p>
+                    <button data-plan="monthly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
                 </div>
-                
-                <div id="auth-area">
-                    <div id="google-login-container">
-                        <button id="google-login-btn" class="ghost-btn">
-                            <svg style="width:20px;height:20px;margin-right:8px;" viewBox="0 0 24 24">
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                            </svg>
-                            Entrar com Google
-                        </button>
-                    </div>
+                <!-- Trimestral (destaque) -->
+                <div class="glass-card p-8 flex flex-col items-center text-center border-2 border-purple-500 transform scale-105">
+                    <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-2">MAIS POPULAR</span>
+                    <h3 class="text-2xl font-bold mb-2">Trimestral</h3>
+                    <p class="text-5xl font-black mb-4">R$49,<span class="text-2xl">99</span></p>
+                    <p class="text-gray-400 mb-6">economize 16%</p>
+                    <button data-plan="quarterly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
                 </div>
-                
-                <div id="user-info" class="user-info hidden">
-                    <img id="user-avatar" alt="User avatar">
-                    <span id="user-name"></span>
-                    <button id="sign-out-btn" class="ghost-btn">Sair</button>
-                </div>
-                
-                <div id="login-warning" class="login-warning">
-                    <span id="login-warning-text">Faça login com Google para começar</span>
+                <!-- Anual -->
+                <div class="glass-card p-8 flex flex-col items-center text-center">
+                    <h3 class="text-2xl font-bold mb-2">Anual</h3>
+                    <p class="text-5xl font-black mb-4">R$199,<span class="text-2xl">00</span></p>
+                    <p class="text-gray-400 mb-6">menos de R$17/mês</p>
+                    <button data-plan="yearly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
                 </div>
             </div>
-        </header>
-        
-        <main class="app-main">
-            <section class="panel panel-left">
-                <form id="property-form" class="property-form">
-                    <div class="panel-header">
-                        <h1 id="form-title">Gerador de Descrições Imobiliárias</h1>
-                        <p id="form-subtitle">
-                            Preencha os dados do imóvel e gere descrições persuasivas para anúncios
-                        </p>
+            <p class="text-center text-gray-500 mt-8">Após o pagamento, sua assinatura será ativada manualmente (aguarde até 24h).</p>
+        </div>
+
+        <!-- DASHBOARD PRINCIPAL -->
+        <div id="dashboard-screen" class="hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold">Olá, <span id="user-name"></span>! 👋</h2>
+                <button id="logout-btn" class="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 rounded-lg transition">Sair</button>
+            </div>
+
+            <!-- Abas de ferramentas -->
+            <div class="flex flex-wrap gap-2 mb-8 border-b border-gray-700 pb-2">
+                <button data-tool="descricao" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition tab-active">📝 Descrição Persuasiva</button>
+                <button data-tool="roteiro" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🎬 Roteiro para Vídeo</button>
+                <button data-tool="objecoes" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">⚡ Quebra de Objeções</button>
+                <button data-tool="ficha" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">📋 Ficha Técnica</button>
+                <button data-tool="foto" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🖼️ Legenda de Foto</button>
+                <button data-tool="extrator" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🔍 Extrator de Dados</button>
+            </div>
+
+            <!-- Configurações de tamanho/idioma -->
+            <div class="glass-card p-6 mb-8">
+                <div class="flex flex-wrap gap-6 items-center">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Tamanho do texto</label>
+                        <select id="tamanho-texto" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
+                            <option value="curto">📱 Curto (Instagram/WhatsApp)</option>
+                            <option value="medio" selected>📄 Médio (Portais)</option>
+                            <option value="longo">📑 Longo (Blog/Site)</option>
+                        </select>
                     </div>
-                    
-                    <div class="form-grid">
-                        <div class="field-group">
-                            <label for="property-type" id="label-property-type">Tipo de Imóvel</label>
-                            <select id="property-type">
-                                <option value="apartamento">Apartamento</option>
-                                <option value="casa">Casa</option>
-                                <option value="moradia">Moradia</option>
-                                <option value="escritorio">Escritório</option>
-                                <option value="loja">Loja/Comercial</option>
-                                <option value="terreno">Terreno</option>
-                            </select>
-                        </div>
-                        
-                        <div class="field-group">
-                            <label for="headline" id="label-headline">Título / Destaque</label>
-                            <input id="headline" type="text" placeholder="Ex: Luxuoso apartamento com vista para o mar">
-                        </div>
-                        
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label for="bedrooms" id="label-bedrooms">Quartos</label>
-                                <input id="bedrooms" type="number" min="0">
-                            </div>
-                            <div class="field-group">
-                                <label for="bathrooms" id="label-bathrooms">Banheiros</label>
-                                <input id="bathrooms" type="number" min="0">
-                            </div>
-                            <div class="field-group">
-                                <label for="area" id="label-area">Área (m²)</label>
-                                <input id="area" type="number" min="0">
-                            </div>
-                        </div>
-                        
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label for="parking" id="label-parking">Vagas</label>
-                                <input id="parking" type="number" min="0">
-                            </div>
-                            <div class="field-group">
-                                <label for="price" id="label-price">Preço</label>
-                                <input id="price" type="text" placeholder="Ex: 250.000 €">
-                            </div>
-                            <div class="field-group">
-                                <label for="address" id="label-address">Localização</label>
-                                <input id="address" type="text" placeholder="Bairro, Cidade">
-                            </div>
-                        </div>
-                        
-                        <div class="field-group">
-                            <label for="highlights" id="label-highlights">Características Especiais</label>
-                            <textarea id="highlights" rows="3" placeholder="Piscina, varanda, vista, amenities..."></textarea>
-                        </div>
-                        
-                        <div class="field-group">
-                            <label for="audience" id="label-audience">Público-Alvo</label>
-                            <select id="audience">
-                                <option value="familias">Famílias</option>
-                                <option value="investidores">Investidores</option>
-                                <option value="jovens">Jovens Profissionais</option>
-                                <option value="luxo">Alto Padrão</option>
-                            </select>
-                        </div>
-                        
-                        <div class="field-group">
-                            <label for="tone" id="label-tone">Tom da Mensagem</label>
-                            <select id="tone">
-                                <option value="profissional">Profissional</option>
-                                <option value="emocional">Emocional</option>
-                                <option value="luxuoso">Luxuoso</option>
-                                <option value="direto">Direto e Objetivo</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Idioma</label>
+                        <select id="idioma-saida" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
+                            <option value="pt">🇧🇷 Português</option>
+                            <option value="en">🇺🇸 English</option>
+                        </select>
                     </div>
-                    
-                    <div class="form-footer">
-                        <div class="quota">
-                            <span id="quota-label">Gerações restantes:</span>
-                            <span id="quota-count">1</span>
-                        </div>
-                        <button type="submit" id="generate-btn" class="primary-btn" disabled>
-                            Gerar Descrições
-                        </button>
+                    <div class="ml-auto">
+                        <button id="gerar-agora" class="btn-primary px-8 py-3 rounded-xl text-white font-bold">✨ Gerar Agora</button>
                     </div>
-                </form>
-            </section>
-            
-            <section class="panel panel-right">
-                <div class="panel-header">
-                    <h2 id="output-title">Descrições Geradas</h2>
                 </div>
-                
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="short">Curta</button>
-                    <button class="tab-btn" data-tab="medium">Média</button>
-                    <button class="tab-btn" data-tab="long">Longa</button>
+            </div>
+
+            <!-- Área de entrada dinâmica -->
+            <div id="tool-input-area" class="glass-card p-6 mb-8">
+                <!-- preenchido via js -->
+            </div>
+
+            <!-- Área de resultado -->
+            <div id="result-area" class="glass-card p-8">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    Resultado
+                </h3>
+                <div id="result-content" class="prose prose-invert max-w-none whitespace-pre-wrap font-light text-lg">
+                    Seu resultado aparecerá aqui...
                 </div>
-                
-                <div class="outputs">
-                    <article id="output-short" class="output-block active"></article>
-                    <article id="output-medium" class="output-block"></article>
-                    <article id="output-long" class="output-block"></article>
-                </div>
-                
-                <div class="output-footer">
-                    <button id="copy-all-btn" class="ghost-btn small" disabled>
-                        Copiar Tudo
-                    </button>
-                    <span id="status-message" class="status-message"></span>
-                </div>
-            </section>
-        </main>
-        
-        <!-- Modal de Pagamento -->
-        <div id="paywall-overlay" class="overlay hidden">
-            <div class="overlay-content">
-                <h2 id="paywall-title">Ativar Plano Profissional</h2>
-                <p id="paywall-text">
-                    Você usou sua geração gratuita. Ative o plano mensal para gerar descrições ilimitadas.
-                </p>
-                
-                <div class="plan-details">
-                    <div class="plan-price">
-                        <span class="price">$9,99</span>
-                        <span class="period">/mês</span>
-                    </div>
-                    <ul class="benefits-list" id="benefits-list">
-                        <li>✅ Gerações ilimitadas</li>
-                        <li>✅ 3 versões por descrição</li>
-                        <li>✅ Suporte em Português e Inglês</li>
-                        <li>✅ Atualizações constantes</li>
-                    </ul>
-                </div>
-                
-                <button id="upgrade-btn" class="primary-btn full-width" style="margin-bottom: 16px;">
-                    🛒 Comprar Plano Profissional
-                </button>
-                
-                <div class="payment-verification" id="payment-verification">
-                    <h3>Verificar Pagamento</h3>
-                    <p>Digite o código recebido por email após o pagamento:</p>
-                    <input type="text" id="verification-code" placeholder="Código de 6 dígitos" maxlength="6" style="width: 100%; padding: 12px; font-size: 18px; text-align: center; letter-spacing: 3px; margin: 12px 0;">
-                    <button id="activate-code-btn" class="ghost-btn full-width" style="margin-bottom: 8px;">
-                        ✅ Ativar com Código
-                    </button>
-                    <p class="hint" id="paywall-hint">
-                        Após o pagamento, você receberá um código de ativação por email.
-                    </p>
-                </div>
-                
-                <button id="close-paywall-btn" class="ghost-btn full-width">
-                    Fechar
-                </button>
+                <button id="copiar-resultado" class="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">📋 Copiar</button>
             </div>
         </div>
-    </div>
-    
-    <!-- Google Identity Services Script -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
-    <script type="module" src="app.js"></script>
+    </main>
+
+    <!-- Rodapé fixo -->
+    <footer class="footer-note">
+        UMINO NAGI - I WAS HERE🍀 · Propriedade da NAGI TECHNOLOGY S.A.
+    </footer>
+
+    <!-- Firebase SDK (modular) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
+                "firebase/analytics": "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+        import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+
+        // Configuração do Firebase (fornecida)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfkl_aCIE35eZQKDYfVqe5Wu8XJrqMNYM",
+            authDomain: "nagibrokerai.firebaseapp.com",
+            projectId: "nagibrokerai",
+            storageBucket: "nagibrokerai.firebasestorage.app",
+            messagingSenderId: "682836610499",
+            appId: "1:682836610499:web:6d909603e36159df404176",
+            measurementId: "G-5KQMSN8FZV"
+        };
+
+        // Inicializa Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // DeepSeek API Key (⚠️ mover para backend em produção)
+        const DEEPSEEK_API_KEY = "sk-d5808163e0ed4acbad4cf892b1a554f9";
+
+        // Links PayPal fornecidos
+        const PAYPAL_LINKS = {
+            monthly: "https://www.paypal.com/ncp/payment/3ZTZRT45ZN9JN",
+            quarterly: "https://www.paypal.com/ncp/payment/RUTJGDGJC6KWJ",
+            yearly: "https://www.paypal.com/ncp/payment/GJXBFRS63YESE"
+        };
+
+        // Elementos DOM
+        const loadingScreen = document.getElementById('loading-screen');
+        const plansScreen = document.getElementById('plans-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const authSection = document.getElementById('auth-section');
+        const userNameSpan = document.getElementById('user-name');
+        const logoutBtn = document.getElementById('logout-btn');
+        const toolInputArea = document.getElementById('tool-input-area');
+        const resultContent = document.getElementById('result-content');
+        const gerarBtn = document.getElementById('gerar-agora');
+        const copiarBtn = document.getElementById('copiar-resultado');
+        const tamanhoSelect = document.getElementById('tamanho-texto');
+        const idiomaSelect = document.getElementById('idioma-saida');
+
+        let currentUser = null;
+        let currentTool = 'descricao';
+
+        // ========== LOGIN GOOGLE ==========
+        window.loginComGoogle = async function() {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error('Erro no login:', error);
+            }
+        };
+
+        // ========== LOGOUT ==========
+        window.logout = function() {
+            signOut(auth);
+        };
+        logoutBtn?.addEventListener('click', logout);
+
+        // ========== VERIFICAR ASSINATURA ==========
+        async function verificarAssinatura(user) {
+            if (!user) return false;
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                // Primeiro login: criar documento
+                await setDoc(userRef, {
+                    email: user.email,
+                    subscriptionStatus: 'pending',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+                return false;
+            }
+
+            const data = userSnap.data();
+            const status = data.subscriptionStatus;
+            const expiry = data.expiryDate?.toDate?.() || null;
+
+            if (status === 'paid' && expiry && expiry > new Date()) {
+                return true;
+            } else if (status === 'paid' && expiry && expiry <= new Date()) {
+                // Expirado: atualizar status
+                await updateDoc(userRef, { subscriptionStatus: 'expired' });
+                return false;
+            }
+            return false;
+        }
+
+        // ========== ATUALIZAR UI CONFORME USUÁRIO ==========
+        async function atualizarUIComUsuario(user) {
+            if (!user) {
+                loadingScreen.classList.add('hidden');
+                plansScreen.classList.add('hidden');
+                dashboardScreen.classList.add('hidden');
+                authSection.innerHTML = `<button onclick="loginComGoogle()" class="px-6 py-2 bg-purple-600 rounded-xl hover:bg-purple-700 transition">Entrar com Google</button>`;
+                return;
+            }
+
+            const temPlanoAtivo = await verificarAssinatura(user);
+            currentUser = user;
+            if (userNameSpan) userNameSpan.textContent = user.displayName || user.email;
+
+            if (temPlanoAtivo) {
+                loadingScreen.classList.add('hidden');
+                plansScreen.classList.add('hidden');
+                dashboardScreen.classList.remove('hidden');
+                authSection.innerHTML = `<span class="text-sm bg-green-600/20 px-3 py-1 rounded-full">Plano Ativo</span>`;
+            } else {
+                loadingScreen.classList.add('hidden');
+                plansScreen.classList.remove('hidden');
+                dashboardScreen.classList.add('hidden');
+                authSection.innerHTML = `
+                    <span class="text-sm bg-yellow-600/20 px-3 py-1 rounded-full">Assinatura pendente</span>
+                    <button onclick="logout()" class="px-4 py-2 bg-gray-700 rounded-lg">Sair</button>
+                `;
+            }
+        }
+
+        // ========== OUVIR ESTADO DE AUTENTICAÇÃO ==========
+        onAuthStateChanged(auth, (user) => {
+            atualizarUIComUsuario(user);
+        });
+
+        // ========== BOTÕES PAYPAL (links externos) ==========
+        document.querySelectorAll('.paypal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const plan = e.target.dataset.plan;
+                const link = PAYPAL_LINKS[plan];
+                if (link) window.open(link, '_blank');
+            });
+        });
+
+        // ========== TROCA DE ABAS ==========
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+                btn.classList.add('tab-active');
+                currentTool = btn.dataset.tool;
+                atualizarInputArea();
+            });
+        });
+
+        function atualizarInputArea() {
+            let html = '';
+            switch (currentTool) {
+                case 'descricao':
+                    html = `
+                        <h3 class="text-lg font-semibold mb-4">📝 Descreva o imóvel</h3>
+                        <textarea id="input-texto" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3" placeholder="Ex: Apartamento 3 quartos, 2 banheiros, 120m², varanda gourmet, piscina, localização perto do metrô..."></textarea>
+                    `;
+                    break;
+                case 'roteiro':
+                    html = `
+                        <h3 class="text-lg font-semibold mb-4">🎬 Roteiro para vídeo</h3>
+                        <textarea id="input-texto" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3" placeholder="Descreva o imóvel e o estilo do vídeo (ex: tour rápido, story para Instagram...)"></textarea>
+                    `;
+                    break;
+                case 'objecoes':
+                    html = `
+                        <h3 class="text-lg font-semibold mb-4">⚡ Objeção do cliente</h3>
+                        <textarea id="input-texto" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3" placeholder="Ex: 'Achei o imóvel caro', 'Condomínio muito alto', 'Localização distante'..."></textarea>
+                    `;
+                    break;
+                case 'ficha':
+                    html = `
+                        <h3 class="text-lg font-semibold mb-4">📋 Organizar ficha técnica</h3>
+                        <textarea id="input-texto" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3" placeholder="Cole anotações bagunçadas: 3qt 2ban 70m² garagem2 vaga etc..."></textarea>
+                    `;
+                    break;
+                case 'foto':
+                    html = `
+                        <h3 class="text-lg font-semibold mb-4">🖼️ Descreva a foto para legenda</h3>
+                        <textarea id="input-texto" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3" placeholder="Ex: foto da sala com luz natural, sofá cinza, vista para o mar..."></textarea>
+                    `;
+                    break;
+                case 'extrator':
+                    html = `
+                        <h3 class="text-lg font-semibold mb-4">🔍 Extrair dados de texto bruto</h3>
+                        <textarea id="input-texto" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3" placeholder="Cole a descrição do imóvel como veio do cliente..."></textarea>
+                    `;
+                    break;
+            }
+            toolInputArea.innerHTML = html;
+        }
+        atualizarInputArea();
+
+        // ========== CHAMADA À API DEEPSEEK ==========
+        async function gerarComDeepSeek(prompt) {
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        { role: 'system', content: 'Você é um assistente especializado em marketing imobiliário. Responda no idioma solicitado pelo usuário. Seja criativo, persuasivo e profissional.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.8,
+                    max_tokens: 1000
+                })
+            });
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        // ========== GERAR CONTEÚDO ==========
+        gerarBtn.addEventListener('click', async () => {
+            const inputTexto = document.getElementById('input-texto')?.value;
+            if (!inputTexto) {
+                resultContent.innerText = 'Por favor, preencha o campo de entrada.';
+                return;
+            }
+
+            const tamanho = tamanhoSelect.value;
+            const idioma = idiomaSelect.value;
+
+            let instrucaoTamanho = '';
+            switch (tamanho) {
+                case 'curto': instrucaoTamanho = 'Gere um texto CURTO (máx 150 palavras), ideal para Instagram ou WhatsApp.'; break;
+                case 'medio': instrucaoTamanho = 'Gere um texto MÉDIO (cerca de 300 palavras), para portais imobiliários.'; break;
+                case 'longo': instrucaoTamanho = 'Gere um texto LONGO e detalhado (cerca de 600 palavras), para blog ou site próprio.'; break;
+            }
+
+            let prompt = '';
+            switch (currentTool) {
+                case 'descricao':
+                    prompt = `Com base nestas informações: "${inputTexto}", crie uma descrição persuasiva do imóvel. ${instrucaoTamanho} Idioma: ${idioma === 'pt' ? 'Português do Brasil' : 'English'}. Use gatilhos mentais.`;
+                    break;
+                case 'roteiro':
+                    prompt = `Crie um roteiro para vídeo de redes sociais (Reels/TikTok) sobre este imóvel: "${inputTexto}". Inclua cenas, falas e dicas. ${instrucaoTamanho} Idioma: ${idioma === 'pt' ? 'Português' : 'English'}.`;
+                    break;
+                case 'objecoes':
+                    prompt = `O cliente disse: "${inputTexto}". Gere 3 argumentos de vendas para quebrar essa objeção. ${instrucaoTamanho} Idioma: ${idioma === 'pt' ? 'Português' : 'English'}.`;
+                    break;
+                case 'ficha':
+                    prompt = `Organize estas anotações em uma ficha técnica profissional de imóvel: "${inputTexto}". Liste itens como área, quartos, banheiros, vagas, diferenciais. ${instrucaoTamanho} Idioma: ${idioma === 'pt' ? 'Português' : 'English'}.`;
+                    break;
+                case 'foto':
+                    prompt = `Crie uma legenda atraente para uma foto que mostra: "${inputTexto}". A legenda deve ser persuasiva e usar palavras-chave imobiliárias. ${instrucaoTamanho} Idioma: ${idioma === 'pt' ? 'Português' : 'English'}.`;
+                    break;
+                case 'extrator':
+                    prompt = `Extraia os dados técnicos (m², quartos, banheiros, vagas, características) deste texto bruto: "${inputTexto}". Apresente em formato de lista. ${instrucaoTamanho} Idioma: ${idioma === 'pt' ? 'Português' : 'English'}.`;
+                    break;
+            }
+
+            resultContent.innerText = 'Gerando... 🤖';
+            try {
+                const resultado = await gerarComDeepSeek(prompt);
+                resultContent.innerText = resultado;
+            } catch (error) {
+                console.error(error);
+                resultContent.innerText = 'Erro ao gerar conteúdo. Tente novamente.';
+            }
+        });
+
+        // ========== COPIAR RESULTADO ==========
+        copiarBtn.addEventListener('click', () => {
+            const texto = resultContent.innerText;
+            if (texto && texto !== 'Seu resultado aparecerá aqui...') {
+                navigator.clipboard.writeText(texto);
+                alert('Copiado para a área de transferência!');
+            }
+        });
+
+        // Expor funções globalmente para os botões inline
+        window.loginComGoogle = loginComGoogle;
+        window.logout = logout;
+
+        console.log('NAGI BROKER AI iniciado com Firebase e DeepSeek.');
+    </script>
 </body>
 </html>
