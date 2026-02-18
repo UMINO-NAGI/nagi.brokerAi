@@ -1,10 +1,10 @@
-// app.js
+// app.js (completo com admin)
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, serverTimestamp } from "firebase/firestore";
 
-// Configuração do Firebase (fornecida)
+// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBfkl_aCIE35eZQKDYfVqe5Wu8XJrqMNYM",
     authDomain: "nagibrokerai.firebaseapp.com",
@@ -15,24 +15,21 @@ const firebaseConfig = {
     measurementId: "G-5KQMSN8FZV"
 };
 
-// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// DeepSeek API Key (⚠️ mover para backend em produção)
 const DEEPSEEK_API_KEY = "sk-d5808163e0ed4acbad4cf892b1a554f9";
 
-// Links PayPal fornecidos
 const PAYPAL_LINKS = {
     monthly: "https://www.paypal.com/ncp/payment/3ZTZRT45ZN9JN",
     quarterly: "https://www.paypal.com/ncp/payment/RUTJGDGJC6KWJ",
     yearly: "https://www.paypal.com/ncp/payment/GJXBFRS63YESE"
 };
 
-// Elementos DOM principais (sempre existem)
+// Elementos DOM
 const welcomeScreen = document.getElementById('welcome-screen');
 const loadingScreen = document.getElementById('loading-screen');
 const plansScreen = document.getElementById('plans-screen');
@@ -40,11 +37,11 @@ const dashboardScreen = document.getElementById('dashboard-screen');
 const authSection = document.getElementById('auth-section');
 const welcomeLoginBtn = document.getElementById('welcome-login-btn');
 
-// Estado
 let currentUser = null;
 let currentTool = 'descricao';
+let isAdmin = false;
 
-// ========== FUNÇÕES DE UI ==========
+// Funções de UI
 function mostrarLoading(mostrar) {
     if (mostrar) {
         welcomeScreen?.classList.add('hidden');
@@ -77,7 +74,7 @@ function mostrarDashboard() {
     loadingScreen?.classList.add('hidden');
 }
 
-// ========== LOGIN GOOGLE ==========
+// Login
 async function loginComGoogle() {
     try {
         mostrarLoading(true);
@@ -88,186 +85,172 @@ async function loginComGoogle() {
         alert('Erro ao fazer login. Tente novamente.');
     }
 }
+welcomeLoginBtn?.addEventListener('click', loginComGoogle);
 
-if (welcomeLoginBtn) {
-    welcomeLoginBtn.addEventListener('click', loginComGoogle);
-}
-
-// ========== LOGOUT ==========
+// Logout
 function logout() {
-    signOut(auth).catch(console.error);
+    signOut(auth);
 }
+window.logout = logout;
 
-// ========== VERIFICAR ASSINATURA ==========
+// Verificar assinatura
 async function verificarAssinatura(user) {
     if (!user) return false;
-    try {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-            // Primeiro login: criar documento
-            await setDoc(userRef, {
-                email: user.email,
-                subscriptionStatus: 'pending',
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-            return false;
-        }
-
-        const data = userSnap.data();
-        const status = data.subscriptionStatus;
-        let expiry = data.expiryDate;
-        if (expiry && typeof expiry.toDate === 'function') {
-            expiry = expiry.toDate();
-        }
-
-        if (status === 'paid' && expiry && expiry > new Date()) {
-            return true;
-        } else if (status === 'paid' && expiry && expiry <= new Date()) {
-            // Expirado: atualizar status
-            await updateDoc(userRef, { subscriptionStatus: 'expired' });
-            return false;
-        }
-        return false;
-    } catch (error) {
-        console.error('Erro ao verificar assinatura:', error);
+    if (!userSnap.exists()) {
+        await setDoc(userRef, {
+            email: user.email,
+            subscriptionStatus: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
         return false;
     }
+
+    const data = userSnap.data();
+    const status = data.subscriptionStatus;
+    const expiry = data.expiryDate?.toDate?.() || null;
+
+    if (status === 'paid' && expiry && expiry > new Date()) {
+        return true;
+    } else if (status === 'paid' && expiry && expiry <= new Date()) {
+        await updateDoc(userRef, { subscriptionStatus: 'expired' });
+        return false;
+    }
+    return false;
 }
 
-// ========== ATUALIZAR UI CONFORME USUÁRIO ==========
+// Verificar se é admin (baseado no email)
+async function verificarAdmin(user) {
+    if (!user) return false;
+    // Lista de emails admin (pode ser configurada no Firestore também)
+    const adminEmails = ['seu-email@admin.com']; // Substitua pelo seu email
+    return adminEmails.includes(user.email);
+}
+
+// Atualizar UI conforme usuário
 async function atualizarUIComUsuario(user) {
-    console.log('Usuário:', user);
     if (!user) {
         mostrarWelcome();
-        if (authSection) authSection.innerHTML = ''; // limpa
+        authSection.innerHTML = '';
         return;
     }
 
     mostrarLoading(true);
     const temPlanoAtivo = await verificarAssinatura(user);
+    const admin = await verificarAdmin(user);
+    isAdmin = admin;
     currentUser = user;
 
     if (temPlanoAtivo) {
-        // Garantir que o dashboard está construído
-        construirDashboard();
+        inicializarDashboard();
         mostrarDashboard();
-        if (authSection) {
-            authSection.innerHTML = `<span class="text-sm bg-green-600/20 px-3 py-1 rounded-full">Plano Ativo</span>`;
-        }
+        authSection.innerHTML = `
+            <span class="text-sm bg-green-600/20 px-3 py-1 rounded-full">Plano Ativo</span>
+            ${isAdmin ? '<button id="admin-panel-btn" class="ml-2 px-3 py-1 bg-purple-600 rounded text-sm">👑 Admin</button>' : ''}
+        `;
+        if (isAdmin) document.getElementById('admin-panel-btn')?.addEventListener('click', abrirPainelAdmin);
     } else {
-        // Garantir que a tela de planos está construída
-        construirPlanos();
+        inicializarPlanos();
         mostrarPlanos();
-        if (authSection) {
-            authSection.innerHTML = `
-                <span class="text-sm bg-yellow-600/20 px-3 py-1 rounded-full">Assinatura pendente</span>
-                <button onclick="window.logout()" class="px-4 py-2 bg-gray-700 rounded-lg">Sair</button>
-            `;
-        }
+        authSection.innerHTML = `
+            <span class="text-sm bg-yellow-600/20 px-3 py-1 rounded-full">Assinatura pendente</span>
+            <button onclick="logout()" class="px-4 py-2 bg-gray-700 rounded-lg">Sair</button>
+        `;
     }
     mostrarLoading(false);
 }
 
-// ========== CONSTRUIR DASHBOARD (se não existir) ==========
-function construirDashboard() {
-    // Se o dashboard já tiver conteúdo, não recria
-    if (dashboardScreen.querySelector('#user-name')) return;
-
-    dashboardScreen.innerHTML = `
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-bold">Olá, <span id="user-name"></span>! 👋</h2>
-            <button id="logout-btn" class="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 rounded-lg transition">Sair</button>
-        </div>
-        <div class="flex flex-wrap gap-2 mb-8 border-b border-gray-700 pb-2">
-            <button data-tool="descricao" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition tab-active">📝 Descrição Persuasiva</button>
-            <button data-tool="roteiro" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🎬 Roteiro para Vídeo</button>
-            <button data-tool="objecoes" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">⚡ Quebra de Objeções</button>
-            <button data-tool="ficha" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">📋 Ficha Técnica</button>
-            <button data-tool="foto" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🖼️ Legenda de Foto</button>
-            <button data-tool="extrator" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🔍 Extrator de Dados</button>
-        </div>
-        <div class="glass-card p-6 mb-8">
-            <div class="flex flex-wrap gap-6 items-center">
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Tamanho do texto</label>
-                    <select id="tamanho-texto" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
-                        <option value="curto">📱 Curto (Instagram/WhatsApp)</option>
-                        <option value="medio" selected>📄 Médio (Portais)</option>
-                        <option value="longo">📑 Longo (Blog/Site)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Idioma</label>
-                    <select id="idioma-saida" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
-                        <option value="pt">🇧🇷 Português</option>
-                        <option value="en">🇺🇸 English</option>
-                    </select>
-                </div>
-                <div class="ml-auto">
-                    <button id="gerar-agora" class="btn-primary px-8 py-3 rounded-xl text-white font-bold">✨ Gerar Agora</button>
+// Inicializar dashboard
+function inicializarDashboard() {
+    if (!dashboardScreen.querySelector('#user-name')) {
+        dashboardScreen.innerHTML = `
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold">Olá, <span id="user-name"></span>! 👋</h2>
+                <button id="logout-btn" class="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 rounded-lg transition">Sair</button>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-8 border-b border-gray-700 pb-2">
+                <button data-tool="descricao" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition tab-active">📝 Descrição Persuasiva</button>
+                <button data-tool="roteiro" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🎬 Roteiro para Vídeo</button>
+                <button data-tool="objecoes" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">⚡ Quebra de Objeções</button>
+                <button data-tool="ficha" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">📋 Ficha Técnica</button>
+                <button data-tool="foto" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🖼️ Legenda de Foto</button>
+                <button data-tool="extrator" class="tab-btn px-6 py-3 rounded-t-xl font-semibold transition">🔍 Extrator de Dados</button>
+            </div>
+            <div class="glass-card p-6 mb-8">
+                <div class="flex flex-wrap gap-6 items-center">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Tamanho do texto</label>
+                        <select id="tamanho-texto" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
+                            <option value="curto">📱 Curto (Instagram/WhatsApp)</option>
+                            <option value="medio" selected>📄 Médio (Portais)</option>
+                            <option value="longo">📑 Longo (Blog/Site)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Idioma</label>
+                        <select id="idioma-saida" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
+                            <option value="pt">🇧🇷 Português</option>
+                            <option value="en">🇺🇸 English</option>
+                        </select>
+                    </div>
+                    <div class="ml-auto">
+                        <button id="gerar-agora" class="btn-primary px-8 py-3 rounded-xl text-white font-bold">✨ Gerar Agora</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div id="tool-input-area" class="glass-card p-6 mb-8"></div>
-        <div id="result-area" class="glass-card p-8">
-            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                Resultado
-            </h3>
-            <div id="result-content" class="prose prose-invert max-w-none whitespace-pre-wrap font-light text-lg">
-                Seu resultado aparecerá aqui...
+            <div id="tool-input-area" class="glass-card p-6 mb-8"></div>
+            <div id="result-area" class="glass-card p-8">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    Resultado
+                </h3>
+                <div id="result-content" class="prose prose-invert max-w-none whitespace-pre-wrap font-light text-lg">
+                    Seu resultado aparecerá aqui...
+                </div>
+                <button id="copiar-resultado" class="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">📋 Copiar</button>
             </div>
-            <button id="copiar-resultado" class="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">📋 Copiar</button>
-        </div>
-    `;
+        `;
+    }
 
-    // Adicionar event listeners
+    const userNameSpan = document.getElementById('user-name');
     const logoutBtn = document.getElementById('logout-btn');
+    const toolInputArea = document.getElementById('tool-input-area');
+    const resultContent = document.getElementById('result-content');
+    const gerarBtn = document.getElementById('gerar-agora');
+    const copiarBtn = document.getElementById('copiar-resultado');
+    const tamanhoSelect = document.getElementById('tamanho-texto');
+    const idiomaSelect = document.getElementById('idioma-saida');
+
+    if (userNameSpan) userNameSpan.textContent = currentUser.displayName || currentUser.email;
+
     logoutBtn?.addEventListener('click', logout);
 
-    // Abas
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
             btn.classList.add('tab-active');
             currentTool = btn.dataset.tool;
-            atualizarInputArea();
+            atualizarInputArea(toolInputArea);
         });
     });
 
-    // Botão gerar
-    const gerarBtn = document.getElementById('gerar-agora');
-    gerarBtn?.addEventListener('click', gerarConteudo);
-
-    // Botão copiar
-    const copiarBtn = document.getElementById('copiar-resultado');
+    gerarBtn?.addEventListener('click', () => gerarConteudo(toolInputArea, tamanhoSelect, idiomaSelect, resultContent));
     copiarBtn?.addEventListener('click', () => {
-        const resultContent = document.getElementById('result-content');
-        if (resultContent) {
-            const texto = resultContent.innerText;
-            if (texto && texto !== 'Seu resultado aparecerá aqui...') {
-                navigator.clipboard.writeText(texto).then(() => alert('Copiado!'));
-            }
+        const texto = resultContent.innerText;
+        if (texto && texto !== 'Seu resultado aparecerá aqui...') {
+            navigator.clipboard.writeText(texto);
+            alert('Copiado!');
         }
     });
 
-    // Atualizar nome do usuário
-    const userNameSpan = document.getElementById('user-name');
-    if (userNameSpan && currentUser) {
-        userNameSpan.textContent = currentUser.displayName || currentUser.email;
-    }
-
-    // Inicializar input area
-    atualizarInputArea();
+    atualizarInputArea(toolInputArea);
 }
 
-function atualizarInputArea() {
-    const toolInputArea = document.getElementById('tool-input-area');
+function atualizarInputArea(toolInputArea) {
     if (!toolInputArea) return;
-
     let html = '';
     switch (currentTool) {
         case 'descricao':
@@ -310,52 +293,131 @@ function atualizarInputArea() {
     toolInputArea.innerHTML = html;
 }
 
-// ========== CONSTRUIR TELA DE PLANOS ==========
-function construirPlanos() {
-    if (plansScreen.querySelector('.grid')) return;
+// Inicializar planos
+function inicializarPlanos() {
+    if (!plansScreen.querySelector('.grid')) {
+        plansScreen.innerHTML = `
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
+                    <span class="gradient-text">Desbloqueie o Poder da IA</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">Escolha o plano ideal para turbinar suas vendas imobiliárias</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div class="glass-card p-8 flex flex-col items-center text-center">
+                    <h3 class="text-2xl font-bold mb-2">Mensal</h3>
+                    <p class="text-5xl font-black mb-4">R$19,<span class="text-2xl">99</span></p>
+                    <p class="text-gray-400 mb-6">por mês, cancela quando quiser</p>
+                    <button data-plan="monthly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
+                </div>
+                <div class="glass-card p-8 flex flex-col items-center text-center border-2 border-purple-500 transform scale-105">
+                    <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-2">MAIS POPULAR</span>
+                    <h3 class="text-2xl font-bold mb-2">Trimestral</h3>
+                    <p class="text-5xl font-black mb-4">R$49,<span class="text-2xl">99</span></p>
+                    <p class="text-gray-400 mb-6">economize 16%</p>
+                    <button data-plan="quarterly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
+                </div>
+                <div class="glass-card p-8 flex flex-col items-center text-center">
+                    <h3 class="text-2xl font-bold mb-2">Anual</h3>
+                    <p class="text-5xl font-black mb-4">R$199,<span class="text-2xl">00</span></p>
+                    <p class="text-gray-400 mb-6">menos de R$17/mês</p>
+                    <button data-plan="yearly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
+                </div>
+            </div>
+            <p class="text-center text-gray-500 mt-8">Após o pagamento, sua assinatura será ativada manualmente (aguarde até 24h).</p>
+        `;
 
-    plansScreen.innerHTML = `
-        <div class="text-center mb-12">
-            <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
-                <span class="gradient-text">Desbloqueie o Poder da IA</span>
-            </h2>
-            <p class="text-xl text-gray-300 max-w-2xl mx-auto">Escolha o plano ideal para turbinar suas vendas imobiliárias</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div class="glass-card p-8 flex flex-col items-center text-center">
-                <h3 class="text-2xl font-bold mb-2">Mensal</h3>
-                <p class="text-5xl font-black mb-4">R$19,<span class="text-2xl">99</span></p>
-                <p class="text-gray-400 mb-6">por mês, cancela quando quiser</p>
-                <button data-plan="monthly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
-            </div>
-            <div class="glass-card p-8 flex flex-col items-center text-center border-2 border-purple-500 transform scale-105">
-                <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-2">MAIS POPULAR</span>
-                <h3 class="text-2xl font-bold mb-2">Trimestral</h3>
-                <p class="text-5xl font-black mb-4">R$49,<span class="text-2xl">99</span></p>
-                <p class="text-gray-400 mb-6">economize 16%</p>
-                <button data-plan="quarterly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
-            </div>
-            <div class="glass-card p-8 flex flex-col items-center text-center">
-                <h3 class="text-2xl font-bold mb-2">Anual</h3>
-                <p class="text-5xl font-black mb-4">R$199,<span class="text-2xl">00</span></p>
-                <p class="text-gray-400 mb-6">menos de R$17/mês</p>
-                <button data-plan="yearly" class="paypal-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition">Comprar via PayPal</button>
-            </div>
-        </div>
-        <p class="text-center text-gray-500 mt-8">Após o pagamento, sua assinatura será ativada manualmente (aguarde até 24h).</p>
-    `;
-
-    // Adicionar listeners aos botões PayPal
-    document.querySelectorAll('.paypal-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const plan = e.currentTarget.dataset.plan;
-            const link = PAYPAL_LINKS[plan];
-            if (link) window.open(link, '_blank');
+        document.querySelectorAll('.paypal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const plan = e.target.dataset.plan;
+                const link = PAYPAL_LINKS[plan];
+                if (link) window.open(link, '_blank');
+            });
         });
-    });
+    }
 }
 
-// ========== CHAMADA À API DEEPSEEK ==========
+// ========== PAINEL ADMIN ==========
+async function abrirPainelAdmin() {
+    // Modal simples
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-gray-900 rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <h2 class="text-2xl font-bold mb-4">Painel Administrativo</h2>
+            <div id="admin-users-list" class="space-y-4">
+                Carregando usuários...
+            </div>
+            <button id="fechar-admin" class="mt-4 px-4 py-2 bg-gray-700 rounded-lg">Fechar</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const listDiv = modal.querySelector('#admin-users-list');
+    const fecharBtn = modal.querySelector('#fechar-admin');
+    fecharBtn.addEventListener('click', () => modal.remove());
+
+    // Buscar todos os usuários da coleção 'users'
+    try {
+        const querySnapshot = await getDocs(collection(db, 'users'));
+        let html = '';
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const uid = docSnap.id;
+            html += `
+                <div class="border border-gray-700 p-4 rounded-lg">
+                    <p><strong>UID:</strong> ${uid}</p>
+                    <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
+                    <p><strong>Status:</strong> ${data.subscriptionStatus || 'pending'}</p>
+                    <p><strong>Expira em:</strong> ${data.expiryDate ? new Date(data.expiryDate.seconds * 1000).toLocaleString() : 'Não definido'}</p>
+                    <div class="flex gap-2 mt-2">
+                        <button class="admin-set-paid bg-green-600 px-3 py-1 rounded" data-uid="${uid}">Marcar como Pago</button>
+                        <button class="admin-set-expired bg-red-600 px-3 py-1 rounded" data-uid="${uid}">Marcar Expirado</button>
+                    </div>
+                </div>
+            `;
+        });
+        listDiv.innerHTML = html || 'Nenhum usuário encontrado.';
+
+        // Adicionar eventos aos botões
+        listDiv.querySelectorAll('.admin-set-paid').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const uid = btn.dataset.uid;
+                // Definir expiryDate para 30 dias a partir de agora (mensal)
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                await updateDoc(doc(db, 'users', uid), {
+                    subscriptionStatus: 'paid',
+                    expiryDate: expiryDate,
+                    updatedAt: serverTimestamp()
+                });
+                alert('Usuário atualizado!');
+                modal.remove(); // recarrega o modal
+                abrirPainelAdmin();
+            });
+        });
+
+        listDiv.querySelectorAll('.admin-set-expired').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const uid = btn.dataset.uid;
+                await updateDoc(doc(db, 'users', uid), {
+                    subscriptionStatus: 'expired',
+                    expiryDate: null,
+                    updatedAt: serverTimestamp()
+                });
+                alert('Usuário atualizado!');
+                modal.remove();
+                abrirPainelAdmin();
+            });
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar usuários:', error);
+        listDiv.innerHTML = 'Erro ao carregar usuários. Verifique as regras de segurança do Firestore.';
+    }
+}
+
+// DeepSeek call
 async function gerarComDeepSeek(prompt) {
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -377,18 +439,12 @@ async function gerarComDeepSeek(prompt) {
     return data.choices[0].message.content;
 }
 
-// ========== GERAR CONTEÚDO ==========
-async function gerarConteudo() {
+async function gerarConteudo(toolInputArea, tamanhoSelect, idiomaSelect, resultContent) {
     const inputTexto = document.getElementById('input-texto')?.value;
-    const resultContent = document.getElementById('result-content');
     if (!inputTexto) {
-        if (resultContent) resultContent.innerText = 'Por favor, preencha o campo de entrada.';
+        resultContent.innerText = 'Por favor, preencha o campo de entrada.';
         return;
     }
-
-    const tamanhoSelect = document.getElementById('tamanho-texto');
-    const idiomaSelect = document.getElementById('idioma-saida');
-    if (!tamanhoSelect || !idiomaSelect) return;
 
     const tamanho = tamanhoSelect.value;
     const idioma = idiomaSelect.value;
@@ -422,21 +478,20 @@ async function gerarConteudo() {
             break;
     }
 
-    if (resultContent) resultContent.innerText = 'Gerando... 🤖';
+    resultContent.innerText = 'Gerando... 🤖';
     try {
         const resultado = await gerarComDeepSeek(prompt);
-        if (resultContent) resultContent.innerText = resultado;
+        resultContent.innerText = resultado;
     } catch (error) {
         console.error(error);
-        if (resultContent) resultContent.innerText = 'Erro ao gerar conteúdo. Tente novamente.';
+        resultContent.innerText = 'Erro ao gerar conteúdo. Tente novamente.';
     }
 }
 
-// ========== OUVIR ESTADO DE AUTENTICAÇÃO ==========
+// Monitorar autenticação
 onAuthStateChanged(auth, (user) => {
-    console.log('Auth state mudou:', user);
     atualizarUIComUsuario(user);
 });
 
-// ========== EXPOR FUNÇÕES GLOBAIS ==========
+// Expor logout global
 window.logout = logout;
