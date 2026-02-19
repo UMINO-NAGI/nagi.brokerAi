@@ -1,140 +1,40 @@
-import { nanoid } from "nanoid";
+// js/auth.js
+import { auth, db } from './firebase-config.js';
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { verificarAssinatura, criarUsuarioPadrao } from './subscription.js';
 
-const STORAGE_KEY = "nagi_broker_ai_auth";
-
-function loadState() {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return { users: {} };
-        return JSON.parse(stored);
-    } catch (error) {
-        console.error("Error loading auth state:", error);
-        return { users: {} };
-    }
+// Função de login com Google
+export async function loginComGoogle() {
+  const provider = new GoogleAuthProvider();
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error('Erro no login:', error);
+    throw error;
+  }
 }
 
-function saveState(state) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-        console.error("Error saving auth state:", error);
-    }
+// Função de logout
+export async function logout() {
+  await signOut(auth);
 }
 
-let state = loadState();
-let currentUser = state.currentUser || null;
-
-const listeners = new Set();
-
-function decodeJwtPayload(token) {
-    if (!token) return null;
-    
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        
-        const base64Url = parts[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        
-        return JSON.parse(jsonPayload);
-    } catch (error) {
-        console.error("Error decoding JWT:", error);
-        return null;
-    }
-}
-
-function handleGoogleCredential(credential) {
-    console.log("Google credential received:", credential);
-    
-    const payload = decodeJwtPayload(credential);
-    if (!payload) {
-        console.error("Failed to decode Google credential");
-        return;
-    }
-    
-    const user = {
-        id: payload.sub || nanoid(),
-        name: payload.name || payload.given_name || "Usuário",
-        email: payload.email || null,
-        avatar: payload.picture || null,
-        provider: "google",
-        createdAt: Date.now()
-    };
-    
-    console.log("User authenticated:", user);
-    
-    // Salvar no state
-    state.currentUser = user;
-    state.users = state.users || {};
-    
-    if (!state.users[user.id]) {
-        state.users[user.id] = {
-            createdAt: Date.now(),
-            lastLogin: Date.now(),
-            loginCount: 1
-        };
+// Observer global que será usado em toda a app
+export function initAuthObserver(callback) {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Usuário logado: garantir que existe no Firestore
+      const userRef = doc(db, 'usuarios', user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        await criarUsuarioPadrao(user);
+      }
+      // Verificar assinatura e retornar dados
+      const subscription = await verificarAssinatura(user.uid);
+      callback({ user, subscription });
     } else {
-        state.users[user.id].lastLogin = Date.now();
-        state.users[user.id].loginCount = (state.users[user.id].loginCount || 0) + 1;
+      callback(null);
     }
-    
-    saveState(state);
-    
-    // Atualizar currentUser e notificar listeners
-    currentUser = user;
-    notify();
+  });
 }
-
-function signOut() {
-    console.log("User signing out");
-    currentUser = null;
-    state.currentUser = null;
-    saveState(state);
-    notify();
-}
-
-function notify() {
-    listeners.forEach(callback => {
-        try {
-            callback(currentUser);
-        } catch (error) {
-            console.error("Error in auth listener:", error);
-        }
-    });
-}
-
-function onChange(callback) {
-    if (typeof callback !== "function") {
-        console.error("Auth onChange callback must be a function");
-        return () => {};
-    }
-    
-    listeners.add(callback);
-    
-    // Chamar imediatamente com o estado atual
-    callback(currentUser);
-    
-    return () => listeners.delete(callback);
-}
-
-function getCurrentUser() {
-    return currentUser;
-}
-
-function isAuthenticated() {
-    return !!currentUser;
-}
-
-// Expor função globalmente
-window.handleGoogleCredential = handleGoogleCredential;
-
-export const auth = {
-    onChange,
-    getCurrentUser,
-    isAuthenticated,
-    handleGoogleCredential,
-    signOut
-};
