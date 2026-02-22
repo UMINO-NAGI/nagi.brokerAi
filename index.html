@@ -1,263 +1,56 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Broker AI - Sistema Inteligente</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .hidden { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    </style>
+    <title>NAGI BROKER AI</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs (modular) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+            }
+        }
+    </script>
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AQtahCMfSr6KdUXc40wnKyRE7NgpUd_vV1alXBGugVLMtshTZUPmLMM-ZokZ6CgO4rccm3wvuap4_sUV&currency=USD"></script>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
-
-    <!-- TELA 1: LOADING (Melhorada) -->
-    <div id="screen-loading" class="flex flex-col items-center justify-center h-screen w-full fixed top-0 left-0 bg-white z-50 transition-opacity duration-500">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mb-4"></div>
-        <p class="text-slate-500 font-medium italic">A carregar Broker AI...</p>
-        <p id="loading-status" class="text-[10px] text-slate-300 mt-2">A verificar conexão com servidor...</p>
-    </div>
-
-    <!-- TELA 2: LOGIN -->
-    <div id="screen-login" class="hidden flex flex-col items-center justify-center min-h-screen w-full px-4">
-        <div class="w-full max-w-md p-8 bg-white rounded-3xl shadow-2xl shadow-blue-100 border border-slate-100 fade-in text-center">
-            <div class="w-20 h-20 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg rotate-3">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            </div>
-            <h1 class="text-4xl font-black mb-2 text-slate-800 tracking-tight text-center">Broker <span class="text-blue-600">AI</span></h1>
-            <p class="text-slate-500 mb-8 font-medium">O seu assistente inteligente para corretagem.</p>
-            
-            <button id="btn-google-login" class="w-full flex items-center justify-center bg-slate-900 text-white font-bold py-4 px-6 rounded-xl hover:bg-slate-800 transition-all duration-300 transform hover:-translate-y-1 shadow-xl">
-                <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                Entrar com Google
-            </button>
-        </div>
-    </div>
-
-    <!-- TELA 3: PAGAMENTO -->
-    <div id="screen-expired" class="hidden flex-col items-center justify-center min-h-screen w-full p-6 fade-in bg-slate-50">
-        <div class="max-w-5xl w-full text-center">
-            <h2 class="text-4xl font-black text-slate-800 mb-4">Assinatura Expirada</h2>
-            <p class="text-lg text-slate-500 mb-12">Olá <span id="user-name-expired" class="font-bold text-blue-600"></span>, o seu período de acesso terminou.</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 text-left">
-                <div class="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-                    <h3 class="text-xl font-bold mb-2">Starter</h3>
-                    <p class="text-4xl font-black text-slate-900 mb-6">€19.99</p>
-                    <p class="text-slate-500 text-sm mb-8">Acesso por 15 dias.</p>
-                    <a href="https://www.paypal.com/ncp/payment/3ZTZRT45ZN9JN" target="_blank" class="block text-center w-full bg-slate-100 text-slate-800 font-bold py-3 rounded-xl hover:bg-slate-200 transition">Assinar</a>
+<body>
+    <div id="app">
+        <!-- Header with login and language toggle -->
+        <header>
+            <div class="logo">NAGI BROKER AI</div>
+            <div class="header-controls">
+                <div class="language-toggle">
+                    <button id="lang-pt" class="lang-btn active">PT</button>
+                    <button id="lang-en" class="lang-btn">EN</button>
                 </div>
-                <div class="bg-white p-8 rounded-3xl shadow-2xl border-2 border-blue-500 transform scale-105 relative">
-                    <span class="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black py-1 px-4 rounded-full uppercase">Popular</span>
-                    <h3 class="text-xl font-bold mb-2 text-blue-600">Professional</h3>
-                    <p class="text-4xl font-black text-slate-900 mb-6">€49.99</p>
-                    <p class="text-slate-500 text-sm mb-8">Acesso completo por 30 dias.</p>
-                    <a href="https://www.paypal.com/ncp/payment/RUTJGDGJC6KWJ" target="_blank" class="block text-center w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg">Assinar Pro</a>
+                <div id="login-section">
+                    <button id="google-login" class="btn btn-primary">Login with Google</button>
+                    <div id="user-info" style="display: none;">
+                        <span id="user-name"></span>
+                        <button id="logout-btn" class="btn btn-secondary">Logout</button>
+                    </div>
                 </div>
-                <div class="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-                    <h3 class="text-xl font-bold mb-2">Lifetime</h3>
-                    <p class="text-4xl font-black text-slate-900 mb-6">€199.00</p>
-                    <p class="text-slate-500 text-sm mb-8">Acesso vitalício ao Broker AI.</p>
-                    <a href="https://www.paypal.com/ncp/payment/GJXBFRS63YESE" target="_blank" class="block text-center w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition">Comprar</a>
-                </div>
-            </div>
-            <button id="btn-logout-expired" class="text-slate-400 hover:text-slate-600 underline text-xs">Sair da conta</button>
-        </div>
-    </div>
-
-    <!-- TELA 4: DASHBOARD -->
-    <div id="screen-dashboard" class="hidden h-screen flex flex-col fade-in">
-        <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h1 class="font-black text-xl text-slate-800">Broker AI</h1>
-            </div>
-            <div class="flex items-center space-x-4">
-                <div class="text-right hidden sm:block">
-                    <p id="dash-user-name" class="text-sm font-bold text-slate-800"></p>
-                    <p id="dash-expiration" class="text-[9px] text-emerald-600 font-black uppercase tracking-widest"></p>
-                </div>
-                <button id="btn-logout-dash" class="p-2 text-slate-300 hover:text-red-500 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
             </div>
         </header>
 
-        <main class="flex-grow overflow-hidden flex flex-col bg-white">
-            <div id="chat-window" class="flex-grow overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
-                <div class="flex items-start">
-                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex shrink-0 items-center justify-center text-white mr-3">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    </div>
-                    <div class="bg-slate-100 p-4 rounded-2xl rounded-tl-none max-w-lg">
-                        <p class="text-slate-700 text-sm">Olá! Sou o seu Broker AI. Como posso ajudar?</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white border-t border-slate-100">
-                <div class="max-w-4xl mx-auto flex items-center bg-slate-50 rounded-2xl p-2 border border-slate-200">
-                    <textarea id="chat-input" placeholder="Pergunte qualquer coisa..." class="flex-grow bg-transparent border-none focus:ring-0 resize-none px-4 py-2 h-12 text-sm" rows="1"></textarea>
-                    <button id="btn-send-chat" class="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition flex items-center justify-center">
-                        <svg id="icon-send" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                        <div id="icon-loading-chat" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    </button>
-                </div>
-            </div>
+        <!-- Main content: pricing or dashboard -->
+        <main id="main-content">
+            <!-- Pricing plans will be injected here if not premium -->
+            <!-- Dashboard will be injected here if premium -->
         </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>UMINO NAGI - I WAS HERE</p>
+        </footer>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBfkl_aCIE35eZQKDYfVqe5Wu8XJrqMNYM",
-            authDomain: "nagibrokerai.firebaseapp.com",
-            projectId: "nagibrokerai",
-            storageBucket: "nagibrokerai.firebasestorage.app",
-            messagingSenderId: "682836610499",
-            appId: "1:682836610499:web:6d909603e36159df404176",
-            measurementId: "G-5KQMSN8FZV"
-        };
-
-        const DEEPSEEK_API_KEY = "sk-d5808163e0ed4acbad4cf892b1a554f9";
-
-        // Timeout de Segurança: Se não carregar em 6 segundos, vai para login
-        const safetyTimeout = setTimeout(() => {
-            if (!screens.loading.classList.contains('hidden')) {
-                console.warn("Segurança: Loading demorou muito. Forçando tela de login.");
-                showScreen(screens.login);
-            }
-        }, 6000);
-
-        let app, auth, db, provider;
-
-        const screens = {
-            loading: document.getElementById('screen-loading'),
-            login: document.getElementById('screen-login'),
-            expired: document.getElementById('screen-expired'),
-            dashboard: document.getElementById('screen-dashboard')
-        };
-
-        function showScreen(target) {
-            clearTimeout(safetyTimeout);
-            Object.values(screens).forEach(s => s.classList.add('hidden'));
-            target.classList.remove('hidden');
-        }
-
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            provider = new GoogleAuthProvider();
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    try {
-                        await checkUserSubscription(user);
-                    } catch (e) {
-                        console.error("Erro na subscrição:", e);
-                        showScreen(screens.login);
-                    }
-                } else {
-                    showScreen(screens.login);
-                }
-            });
-        } catch (error) {
-            console.error("Erro ao inicializar Firebase:", error);
-            showScreen(screens.login);
-        }
-
-        async function checkUserSubscription(user) {
-            const userRef = doc(db, "usuarios", user.uid);
-            let userSnap = await getDoc(userRef);
-
-            if (!userSnap.exists()) {
-                const trialDate = new Date();
-                trialDate.setDate(trialDate.getDate() + 3);
-                const newData = {
-                    uid: user.uid,
-                    email: user.email,
-                    nome: user.displayName,
-                    plano: "trial",
-                    validade: Timestamp.fromDate(trialDate),
-                    criadoEm: serverTimestamp()
-                };
-                await setDoc(userRef, newData);
-                userSnap = await getDoc(userRef);
-            }
-
-            const userData = userSnap.data();
-            const validade = userData.validade ? userData.validade.toDate() : null;
-            const agora = new Date();
-
-            if (!validade || agora > validade) {
-                document.getElementById('user-name-expired').innerText = user.displayName;
-                showScreen(screens.expired);
-            } else {
-                document.getElementById('dash-user-name').innerText = user.displayName;
-                document.getElementById('dash-expiration').innerText = `Acesso até: ${validade.toLocaleDateString('pt-BR')}`;
-                showScreen(screens.dashboard);
-            }
-        }
-
-        // Chat Logic
-        const chatInput = document.getElementById('chat-input');
-        const chatWindow = document.getElementById('chat-window');
-        const btnSend = document.getElementById('btn-send-chat');
-
-        async function sendMessage() {
-            const text = chatInput.value.trim();
-            if (!text) return;
-            chatInput.value = '';
-            appendMessage('user', text);
-            document.getElementById('icon-send').classList.add('hidden');
-            document.getElementById('icon-loading-chat').classList.remove('hidden');
-
-            try {
-                const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${DEEPSEEK_API_KEY}` },
-                    body: JSON.stringify({
-                        model: "deepseek-chat",
-                        messages: [{role: "system", content: "Broker AI Assistant"}, {role: "user", content: text}]
-                    })
-                });
-                const data = await res.json();
-                appendMessage('ai', data.choices[0].message.content);
-            } catch (e) {
-                appendMessage('ai', "Erro ao conectar com a IA.");
-            } finally {
-                document.getElementById('icon-send').classList.remove('hidden');
-                document.getElementById('icon-loading-chat').classList.add('hidden');
-            }
-        }
-
-        function appendMessage(role, text) {
-            const div = document.createElement('div');
-            div.className = `flex items-start ${role === 'user' ? 'justify-end' : ''} fade-in`;
-            div.innerHTML = `
-                ${role !== 'user' ? '<div class="w-8 h-8 rounded-lg bg-blue-600 flex shrink-0 items-center justify-center text-white mr-3"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>' : ''}
-                <div class="${role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'} p-4 rounded-2xl max-w-lg shadow-sm">
-                    <p class="text-sm leading-relaxed">${text.replace(/\n/g, '<br>')}</p>
-                </div>
-            `;
-            chatWindow.appendChild(div);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        btnSend.onclick = sendMessage;
-        chatInput.onkeydown = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
-        document.getElementById('btn-google-login').onclick = () => signInWithPopup(auth, provider);
-        document.getElementById('btn-logout-expired').onclick = () => signOut(auth);
-        document.getElementById('btn-logout-dash').onclick = () => signOut(auth);
-    </script>
+    <!-- Our app script (module) -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
