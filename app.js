@@ -180,31 +180,32 @@ onAuthStateChanged(auth, async (user) => {
         userNameSpan.textContent = user.displayName || user.email;
         googleLoginBtn.style.display = 'none';
         userInfoDiv.style.display = 'flex';
+        
+        // Verifica/cria documento do usuário no Firestore
+        await ensureUserDocument(user);
+        
         await checkPremiumAndRender();
     } else {
         currentUser = null;
         userNameSpan.textContent = '';
         googleLoginBtn.style.display = 'inline-block';
         userInfoDiv.style.display = 'none';
-        renderPricing(); // show pricing (non-premium view)
+        renderPricing();
     }
 });
 
-async function checkPremiumAndRender() {
-    if (!currentUser) return;
-    const userRef = doc(db, 'users', currentUser.uid);
+// Nova função para garantir que o documento do usuário existe
+async function ensureUserDocument(user) {
+    const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-        const data = userSnap.data();
-        const premiumUntil = data.premiumUntil ? data.premiumUntil.toDate() : null;
-        isPremium = premiumUntil && premiumUntil > new Date();
-    } else {
-        isPremium = false;
-    }
-    if (isPremium) {
-        renderDashboard();
-    } else {
-        renderPricing();
+    if (!userSnap.exists()) {
+        // Cria documento básico com email e data de criação
+        await setDoc(userRef, {
+            email: user.email,
+            createdAt: new Date(),
+            premiumUntil: null // ou não incluir este campo
+        });
+        console.log('Documento do usuário criado no Firestore');
     }
 }
 
