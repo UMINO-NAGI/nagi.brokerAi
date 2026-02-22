@@ -1,10 +1,12 @@
-// app.js - Main frontend logic
+// ============================================
+// NAGI BROKER AI - Frontend Principal
+// ============================================
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 
-// Firebase configuration (from provided file)
+// Configuração do Firebase (do arquivo integrações.txt)
 const firebaseConfig = {
     apiKey: "AIzaSyCsGNZ5JyzagqwEEYjkOu9Ch6U0QRf6stc",
     authDomain: "nagibrokerai-107b0.firebaseapp.com",
@@ -15,14 +17,16 @@ const firebaseConfig = {
     measurementId: "G-FRN86VXEPC"
 };
 
-// Initialize Firebase
+// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Internationalization
-let currentLanguage = 'pt'; // default
+// ============================================
+// Internacionalização (PT/EN)
+// ============================================
+let currentLanguage = 'pt'; // padrão
 
 const translations = {
     pt: {
@@ -103,7 +107,9 @@ const translations = {
     }
 };
 
-// DOM elements
+// ============================================
+// Elementos do DOM
+// ============================================
 const mainContent = document.getElementById('main-content');
 const googleLoginBtn = document.getElementById('google-login');
 const userInfoDiv = document.getElementById('user-info');
@@ -112,11 +118,26 @@ const logoutBtn = document.getElementById('logout-btn');
 const langPT = document.getElementById('lang-pt');
 const langEN = document.getElementById('lang-en');
 
-// Current user and premium status
+// Estado global
 let currentUser = null;
 let isPremium = false;
 
-// Language toggle event listeners
+// ============================================
+// Utilitários
+// ============================================
+function t(key) {
+    return translations[currentLanguage][key] || key;
+}
+
+// Atualiza textos estáticos (botões de login/logout)
+function updateStaticTexts() {
+    googleLoginBtn.textContent = t('login');
+    logoutBtn.textContent = t('logout');
+}
+
+// ============================================
+// Gerenciamento de Idioma
+// ============================================
 langPT.addEventListener('click', () => {
     setLanguage('pt');
     langPT.classList.add('active');
@@ -131,38 +152,24 @@ langEN.addEventListener('click', () => {
 
 function setLanguage(lang) {
     currentLanguage = lang;
-    updateUILanguage();
-    // If dashboard is visible, we need to re-render with new language?
-    // Actually the dashboard is static but tool placeholders and labels need update.
-    // We'll refresh the view based on current user state.
+    updateStaticTexts();
+    // Re-renderiza a view atual (pricing ou dashboard) com o novo idioma
     if (currentUser) {
-        checkPremiumAndRender();
+        checkPremiumAndRender(); // isso chama renderPricing ou renderDashboard
     } else {
-        renderPricing(); // render pricing with new language
+        renderPricing();
     }
 }
 
-function translate(key) {
-    return translations[currentLanguage][key] || key;
-}
-
-// Update all static UI text elements (for dynamic parts, we re-render)
-function updateUILanguage() {
-    // Update login button
-    googleLoginBtn.textContent = translate('login');
-    // Update logout button
-    logoutBtn.textContent = translate('logout');
-    // If showing pricing, it's re-rendered, so no need here.
-    // But we might have already rendered something, so we re-render content.
-}
-
+// ============================================
 // Firebase Auth
+// ============================================
 googleLoginBtn.addEventListener('click', async () => {
     try {
         await signInWithPopup(auth, provider);
     } catch (error) {
-        console.error('Login error:', error);
-        alert('Login failed: ' + error.message);
+        console.error('Erro no login:', error);
+        alert('Falha no login: ' + error.message);
     }
 });
 
@@ -170,71 +177,85 @@ logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
     } catch (error) {
-        console.error('Logout error:', error);
+        console.error('Erro no logout:', error);
     }
 });
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        userNameSpan.textContent = user.displayName || user.email;
-        googleLoginBtn.style.display = 'none';
-        userInfoDiv.style.display = 'flex';
-        
-        // Verifica/cria documento do usuário no Firestore
-        await ensureUserDocument(user);
-        
-        await checkPremiumAndRender();
-    } else {
-        currentUser = null;
-        userNameSpan.textContent = '';
-        googleLoginBtn.style.display = 'inline-block';
-        userInfoDiv.style.display = 'none';
-        renderPricing();
-    }
-});
-
-// Nova função para garantir que o documento do usuário existe
+// Cria documento do usuário se não existir
 async function ensureUserDocument(user) {
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) {
-        // Cria documento básico com email e data de criação
         await setDoc(userRef, {
             email: user.email,
-            createdAt: new Date(),
-            premiumUntil: null // ou não incluir este campo
+            createdAt: Timestamp.now(),
+            premiumUntil: null
         });
-        console.log('Documento do usuário criado no Firestore');
+        console.log('Documento do usuário criado:', user.uid);
     }
 }
 
-// Render pricing with PayPal buttons
+// Verifica premium e renderiza tela apropriada
+async function checkPremiumAndRender() {
+    if (!currentUser) return;
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+        const data = userSnap.data();
+        // Converte premiumUntil para Date se for Timestamp ou string ISO
+        let premiumUntil = null;
+        if (data.premiumUntil) {
+            if (data.premiumUntil instanceof Timestamp) {
+                premiumUntil = data.premiumUntil.toDate();
+            } else if (typeof data.premiumUntil === 'string') {
+                premiumUntil = new Date(data.premiumUntil);
+            } else if (data.premiumUntil.seconds) { // Caso seja um objeto com seconds (Firestore old)
+                premiumUntil = new Date(data.premiumUntil.seconds * 1000);
+            }
+        }
+        isPremium = premiumUntil && premiumUntil > new Date();
+        console.log('Premium status:', isPremium, 'Expira:', premiumUntil);
+    } else {
+        isPremium = false;
+    }
+
+    if (isPremium) {
+        renderDashboard();
+    } else {
+        renderPricing();
+    }
+}
+
+// ============================================
+// Renderização: Planos (Pricing)
+// ============================================
 function renderPricing() {
     mainContent.innerHTML = `
         <div class="pricing-container">
-            <h1 class="pricing-title">${translate('pricing_title')}</h1>
-            <p class="pricing-subtitle">${translate('pricing_subtitle')}</p>
+            <h1 class="pricing-title">${t('pricing_title')}</h1>
+            <p class="pricing-subtitle">${t('pricing_subtitle')}</p>
             <div class="pricing-grid">
                 <div class="pricing-card" data-plan="19.99">
-                    <h3>${translate('plan_month')}</h3>
-                    <div class="price">${translate('price_month')} <span>${translate('per_month')}</span></div>
+                    <h3>${t('plan_month')}</h3>
+                    <div class="price">${t('price_month')} <span>${t('per_month')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                     <div class="paypal-button-container" id="paypal-button-19.99"></div>
                 </div>
                 <div class="pricing-card" data-plan="49.99">
-                    <h3>${translate('plan_3months')}</h3>
-                    <div class="price">${translate('price_3months')} <span>${translate('per_3months')}</span></div>
+                    <h3>${t('plan_3months')}</h3>
+                    <div class="price">${t('price_3months')} <span>${t('per_3months')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                     <div class="paypal-button-container" id="paypal-button-49.99"></div>
                 </div>
                 <div class="pricing-card" data-plan="199.00">
-                    <h3>${translate('plan_year')}</h3>
-                    <div class="price">${translate('price_year')} <span>${translate('per_year')}</span></div>
+                    <h3>${t('plan_year')}</h3>
+                    <div class="price">${t('price_year')} <span>${t('per_year')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
@@ -243,12 +264,14 @@ function renderPricing() {
             </div>
         </div>
     `;
-    // Initialize PayPal buttons for each plan
     renderPayPalButtons();
 }
 
 function renderPayPalButtons() {
-    if (!window.paypal) return;
+    if (!window.paypal) {
+        console.error('PayPal SDK não carregado');
+        return;
+    }
     const plans = [
         { id: '19.99', amount: '19.99' },
         { id: '49.99', amount: '49.99' },
@@ -257,21 +280,17 @@ function renderPayPalButtons() {
     plans.forEach(plan => {
         const container = document.getElementById(`paypal-button-${plan.id}`);
         if (!container) return;
-        container.innerHTML = ''; // Clear in case re-render
+        container.innerHTML = ''; // Limpa para evitar duplicação
         paypal.Buttons({
             createOrder: (data, actions) => {
                 return actions.order.create({
                     purchase_units: [{
-                        amount: {
-                            value: plan.amount
-                        }
+                        amount: { value: plan.amount }
                     }]
                 });
             },
             onApprove: async (data, actions) => {
-                // Show loading
-                container.innerHTML = '<p>Processing...</p>';
-                // Call our verification function
+                container.innerHTML = '<p>Processando...</p>';
                 try {
                     const response = await fetch('/api/verify-payment', {
                         method: 'POST',
@@ -284,91 +303,92 @@ function renderPayPalButtons() {
                     });
                     const result = await response.json();
                     if (result.success) {
-                        alert('Payment successful! Your premium access is now active.');
-                        await checkPremiumAndRender(); // refresh
+                        alert('Pagamento confirmado! Seu acesso premium foi ativado.');
+                        await checkPremiumAndRender(); // Atualiza a tela
                     } else {
-                        alert('Payment verification failed: ' + result.error);
-                        renderPayPalButtons(); // re-render buttons
+                        alert('Falha na verificação: ' + result.error);
+                        renderPayPalButtons(); // Re-renderiza botões
                     }
                 } catch (error) {
-                    alert('Error verifying payment: ' + error.message);
+                    alert('Erro ao verificar pagamento: ' + error.message);
                     renderPayPalButtons();
                 }
             },
             onError: (err) => {
-                console.error('PayPal error:', err);
-                alert('PayPal error: ' + err.message);
+                console.error('Erro PayPal:', err);
+                alert('Erro no PayPal: ' + err.message);
             }
         }).render(container);
     });
 }
 
-// Render dashboard with 8 tools
+// ============================================
+// Renderização: Dashboard (Ferramentas)
+// ============================================
 function renderDashboard() {
     mainContent.innerHTML = `
         <div class="dashboard">
-            <h2>${translate('dashboard_title')}</h2>
+            <h2>${t('dashboard_title')}</h2>
             <div class="tools-grid">
-                <!-- Tool 1: Ad Generator -->
-                <div class="tool-card" data-tool="adGenerator">
-                    <h3>${translate('tool1')}</h3>
-                    <textarea class="tool-textarea" id="tool1-input" placeholder="${translate('tool1_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool1-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool1-output">${translate('output')}</div>
+                <!-- Tool 1 -->
+                <div class="tool-card">
+                    <h3>${t('tool1')}</h3>
+                    <textarea class="tool-textarea" id="tool1-input" placeholder="${t('tool1_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool1-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool1-output">${t('output')}</div>
                 </div>
-                <!-- Tool 2: Technical Translator -->
-                <div class="tool-card" data-tool="translator">
-                    <h3>${translate('tool2')}</h3>
-                    <textarea class="tool-textarea" id="tool2-input" placeholder="${translate('tool2_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool2-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool2-output">${translate('output')}</div>
+                <!-- Tool 2 -->
+                <div class="tool-card">
+                    <h3>${t('tool2')}</h3>
+                    <textarea class="tool-textarea" id="tool2-input" placeholder="${t('tool2_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool2-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool2-output">${t('output')}</div>
                 </div>
-                <!-- Tool 3: Objection Crusher -->
-                <div class="tool-card" data-tool="objection">
-                    <h3>${translate('tool3')}</h3>
-                    <textarea class="tool-textarea" id="tool3-input" placeholder="${translate('tool3_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool3-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool3-output">${translate('output')}</div>
+                <!-- Tool 3 -->
+                <div class="tool-card">
+                    <h3>${t('tool3')}</h3>
+                    <textarea class="tool-textarea" id="tool3-input" placeholder="${t('tool3_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool3-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool3-output">${t('output')}</div>
                 </div>
-                <!-- Tool 4: Video Scripts -->
-                <div class="tool-card" data-tool="videoScript">
-                    <h3>${translate('tool4')}</h3>
-                    <textarea class="tool-textarea" id="tool4-input" placeholder="${translate('tool4_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool4-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool4-output">${translate('output')}</div>
+                <!-- Tool 4 -->
+                <div class="tool-card">
+                    <h3>${t('tool4')}</h3>
+                    <textarea class="tool-textarea" id="tool4-input" placeholder="${t('tool4_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool4-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool4-output">${t('output')}</div>
                 </div>
-                <!-- Tool 5: Campaign Creator -->
-                <div class="tool-card" data-tool="campaign">
-                    <h3>${translate('tool5')}</h3>
-                    <textarea class="tool-textarea" id="tool5-input" placeholder="${translate('tool5_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool5-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool5-output">${translate('output')}</div>
+                <!-- Tool 5 -->
+                <div class="tool-card">
+                    <h3>${t('tool5')}</h3>
+                    <textarea class="tool-textarea" id="tool5-input" placeholder="${t('tool5_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool5-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool5-output">${t('output')}</div>
                 </div>
-                <!-- Tool 6: Email Sequence -->
-                <div class="tool-card" data-tool="email">
-                    <h3>${translate('tool6')}</h3>
-                    <textarea class="tool-textarea" id="tool6-input" placeholder="${translate('tool6_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool6-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool6-output">${translate('output')}</div>
+                <!-- Tool 6 -->
+                <div class="tool-card">
+                    <h3>${t('tool6')}</h3>
+                    <textarea class="tool-textarea" id="tool6-input" placeholder="${t('tool6_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool6-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool6-output">${t('output')}</div>
                 </div>
-                <!-- Tool 7: Contract Simplifier -->
-                <div class="tool-card" data-tool="contract">
-                    <h3>${translate('tool7')}</h3>
-                    <textarea class="tool-textarea" id="tool7-input" placeholder="${translate('tool7_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool7-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool7-output">${translate('output')}</div>
+                <!-- Tool 7 -->
+                <div class="tool-card">
+                    <h3>${t('tool7')}</h3>
+                    <textarea class="tool-textarea" id="tool7-input" placeholder="${t('tool7_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool7-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool7-output">${t('output')}</div>
                 </div>
-                <!-- Tool 8: Home Staging Suggestions -->
-                <div class="tool-card" data-tool="homeStaging">
-                    <h3>${translate('tool8')}</h3>
-                    <textarea class="tool-textarea" id="tool8-input" placeholder="${translate('tool8_placeholder')}"></textarea>
-                    <button class="tool-btn" id="tool8-btn">${translate('generate')}</button>
-                    <div class="tool-output" id="tool8-output">${translate('output')}</div>
+                <!-- Tool 8 -->
+                <div class="tool-card">
+                    <h3>${t('tool8')}</h3>
+                    <textarea class="tool-textarea" id="tool8-input" placeholder="${t('tool8_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool8-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool8-output">${t('output')}</div>
                 </div>
             </div>
         </div>
     `;
-    // Attach event listeners to tool buttons
     attachToolListeners();
 }
 
@@ -386,10 +406,10 @@ async function handleToolClick(toolNumber) {
     const outputEl = document.getElementById(`tool${toolNumber}-output`);
     const prompt = inputEl.value.trim();
     if (!prompt) {
-        alert('Please enter some input.');
+        alert('Por favor, insira algum texto.');
         return;
     }
-    outputEl.textContent = translate('loading');
+    outputEl.textContent = t('loading');
     try {
         const response = await fetch('/api/deepseek', {
             method: 'POST',
@@ -397,19 +417,42 @@ async function handleToolClick(toolNumber) {
             body: JSON.stringify({
                 prompt: prompt,
                 language: currentLanguage,
-                tool: toolNumber // optional, you can customize prompts per tool
+                tool: toolNumber
             })
         });
         const data = await response.json();
         if (data.success) {
             outputEl.textContent = data.result;
         } else {
-            outputEl.textContent = 'Error: ' + data.error;
+            outputEl.textContent = 'Erro: ' + data.error;
         }
     } catch (error) {
-        outputEl.textContent = 'Request failed: ' + error.message;
+        outputEl.textContent = 'Falha na requisição: ' + error.message;
     }
 }
 
-// Initialize language and render pricing if no user
+// ============================================
+// Inicialização e Observador de Auth
+// ============================================
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        currentUser = user;
+        userNameSpan.textContent = user.displayName || user.email;
+        googleLoginBtn.style.display = 'none';
+        userInfoDiv.style.display = 'flex';
+
+        // Garante que o documento do usuário existe
+        await ensureUserDocument(user);
+        await checkPremiumAndRender();
+    } else {
+        currentUser = null;
+        userNameSpan.textContent = '';
+        googleLoginBtn.style.display = 'inline-block';
+        userInfoDiv.style.display = 'none';
+        renderPricing();
+    }
+    updateStaticTexts();
+});
+
+// Inicializa idioma padrão
 setLanguage('pt');
