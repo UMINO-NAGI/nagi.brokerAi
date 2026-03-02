@@ -112,7 +112,7 @@ main {
     width: 100%;
 }
 
-/* Pricing Cards */
+/* Cards de preços */
 .pricing-container {
     text-align: center;
     padding: 2rem 0;
@@ -224,24 +224,20 @@ main {
     font-size: 1.25rem;
 }
 
-.tool-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-}
-
+.tool-input,
 .tool-textarea {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #cbd5e1;
     border-radius: 0.5rem;
     margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.tool-textarea {
     min-height: 80px;
     resize: vertical;
-    font-family: inherit;
 }
 
 .tool-btn {
@@ -278,7 +274,7 @@ footer {
     border-top: 1px solid #e2e8f0;
 }
 
-/* Responsive */
+/* Responsividade */
 @media (max-width: 768px) {
     header {
         flex-direction: column;

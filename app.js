@@ -4,7 +4,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 
 // Configuração do Firebase (do arquivo integrações.txt)
 const firebaseConfig = {
@@ -123,13 +123,12 @@ let currentUser = null;
 let isPremium = false;
 
 // ============================================
-// Utilitários
+// Utilitários de tradução
 // ============================================
 function t(key) {
     return translations[currentLanguage][key] || key;
 }
 
-// Atualiza textos estáticos (botões de login/logout)
 function updateStaticTexts() {
     googleLoginBtn.textContent = t('login');
     logoutBtn.textContent = t('logout');
@@ -153,9 +152,9 @@ langEN.addEventListener('click', () => {
 function setLanguage(lang) {
     currentLanguage = lang;
     updateStaticTexts();
-    // Re-renderiza a view atual (pricing ou dashboard) com o novo idioma
+    // Re-renderiza a view atual
     if (currentUser) {
-        checkPremiumAndRender(); // isso chama renderPricing ou renderDashboard
+        checkPremiumAndRender();
     } else {
         renderPricing();
     }
@@ -204,14 +203,14 @@ async function checkPremiumAndRender() {
 
     if (userSnap.exists()) {
         const data = userSnap.data();
-        // Converte premiumUntil para Date se for Timestamp ou string ISO
+        // Converte premiumUntil para Date, suportando diferentes formatos
         let premiumUntil = null;
         if (data.premiumUntil) {
             if (data.premiumUntil instanceof Timestamp) {
                 premiumUntil = data.premiumUntil.toDate();
             } else if (typeof data.premiumUntil === 'string') {
                 premiumUntil = new Date(data.premiumUntil);
-            } else if (data.premiumUntil.seconds) { // Caso seja um objeto com seconds (Firestore old)
+            } else if (data.premiumUntil?.seconds) {
                 premiumUntil = new Date(data.premiumUntil.seconds * 1000);
             }
         }
@@ -304,7 +303,7 @@ function renderPayPalButtons() {
                     const result = await response.json();
                     if (result.success) {
                         alert('Pagamento confirmado! Seu acesso premium foi ativado.');
-                        await checkPremiumAndRender(); // Atualiza a tela
+                        await checkPremiumAndRender();
                     } else {
                         alert('Falha na verificação: ' + result.error);
                         renderPayPalButtons(); // Re-renderiza botões
@@ -330,56 +329,56 @@ function renderDashboard() {
         <div class="dashboard">
             <h2>${t('dashboard_title')}</h2>
             <div class="tools-grid">
-                <!-- Tool 1 -->
+                <!-- Ferramenta 1 -->
                 <div class="tool-card">
                     <h3>${t('tool1')}</h3>
                     <textarea class="tool-textarea" id="tool1-input" placeholder="${t('tool1_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool1-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool1-output">${t('output')}</div>
                 </div>
-                <!-- Tool 2 -->
+                <!-- Ferramenta 2 -->
                 <div class="tool-card">
                     <h3>${t('tool2')}</h3>
                     <textarea class="tool-textarea" id="tool2-input" placeholder="${t('tool2_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool2-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool2-output">${t('output')}</div>
                 </div>
-                <!-- Tool 3 -->
+                <!-- Ferramenta 3 -->
                 <div class="tool-card">
                     <h3>${t('tool3')}</h3>
                     <textarea class="tool-textarea" id="tool3-input" placeholder="${t('tool3_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool3-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool3-output">${t('output')}</div>
                 </div>
-                <!-- Tool 4 -->
+                <!-- Ferramenta 4 -->
                 <div class="tool-card">
                     <h3>${t('tool4')}</h3>
                     <textarea class="tool-textarea" id="tool4-input" placeholder="${t('tool4_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool4-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool4-output">${t('output')}</div>
                 </div>
-                <!-- Tool 5 -->
+                <!-- Ferramenta 5 -->
                 <div class="tool-card">
                     <h3>${t('tool5')}</h3>
                     <textarea class="tool-textarea" id="tool5-input" placeholder="${t('tool5_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool5-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool5-output">${t('output')}</div>
                 </div>
-                <!-- Tool 6 -->
+                <!-- Ferramenta 6 -->
                 <div class="tool-card">
                     <h3>${t('tool6')}</h3>
                     <textarea class="tool-textarea" id="tool6-input" placeholder="${t('tool6_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool6-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool6-output">${t('output')}</div>
                 </div>
-                <!-- Tool 7 -->
+                <!-- Ferramenta 7 -->
                 <div class="tool-card">
                     <h3>${t('tool7')}</h3>
                     <textarea class="tool-textarea" id="tool7-input" placeholder="${t('tool7_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool7-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool7-output">${t('output')}</div>
                 </div>
-                <!-- Tool 8 -->
+                <!-- Ferramenta 8 -->
                 <div class="tool-card">
                     <h3>${t('tool8')}</h3>
                     <textarea class="tool-textarea" id="tool8-input" placeholder="${t('tool8_placeholder')}"></textarea>
@@ -420,13 +419,28 @@ async function handleToolClick(toolNumber) {
                 tool: toolNumber
             })
         });
-        const data = await response.json();
+
+        // Primeiro obtém o texto da resposta
+        const text = await response.text();
+        console.log('Resposta bruta da API:', text);
+
+        // Tenta converter para JSON
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (jsonError) {
+            console.error('Resposta não é JSON:', text);
+            outputEl.textContent = 'Erro: resposta inválida do servidor (não é JSON).';
+            return;
+        }
+
         if (data.success) {
             outputEl.textContent = data.result;
         } else {
-            outputEl.textContent = 'Erro: ' + data.error;
+            outputEl.textContent = 'Erro: ' + (data.error || 'Resposta inválida');
         }
     } catch (error) {
+        console.error('Erro na requisição:', error);
         outputEl.textContent = 'Falha na requisição: ' + error.message;
     }
 }
@@ -441,7 +455,6 @@ onAuthStateChanged(auth, async (user) => {
         googleLoginBtn.style.display = 'none';
         userInfoDiv.style.display = 'flex';
 
-        // Garante que o documento do usuário existe
         await ensureUserDocument(user);
         await checkPremiumAndRender();
     } else {

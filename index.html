@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NAGI BROKER AI</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDKs (modular) -->
+    <!-- Import map para Firebase modular -->
     <script type="importmap">
         {
             "imports": {
@@ -15,12 +15,12 @@
             }
         }
     </script>
-    <!-- PayPal SDK -->
+    <!-- PayPal SDK - COLE SEU CLIENT ID AQUI (já está configurado) -->
     <script src="https://www.paypal.com/sdk/js?client-id=AQtahCMfSr6KdUXc40wnKyRE7NgpUd_vV1alXBGugVLMtshTZUPmLMM-ZokZ6CgO4rccm3wvuap4_sUV&currency=USD"></script>
 </head>
 <body>
     <div id="app">
-        <!-- Header with login and language toggle -->
+        <!-- Cabeçalho com login e alternador de idioma -->
         <header>
             <div class="logo">NAGI BROKER AI</div>
             <div class="header-controls">
@@ -29,28 +29,27 @@
                     <button id="lang-en" class="lang-btn">EN</button>
                 </div>
                 <div id="login-section">
-                    <button id="google-login" class="btn btn-primary">Login with Google</button>
+                    <button id="google-login" class="btn btn-primary">Login com Google</button>
                     <div id="user-info" style="display: none;">
                         <span id="user-name"></span>
-                        <button id="logout-btn" class="btn btn-secondary">Logout</button>
+                        <button id="logout-btn" class="btn btn-secondary">Sair</button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Main content: pricing or dashboard -->
+        <!-- Conteúdo principal (precificação ou dashboard) -->
         <main id="main-content">
-            <!-- Pricing plans will be injected here if not premium -->
-            <!-- Dashboard will be injected here if premium -->
+            <!-- Será preenchido dinamicamente -->
         </main>
 
-        <!-- Footer -->
+        <!-- Rodapé fixo -->
         <footer>
             <p>UMINO NAGI - I WAS HERE</p>
         </footer>
     </div>
 
-    <!-- Our app script (module) -->
+    <!-- Script principal (módulo) -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
