@@ -1,14 +1,13 @@
-// api/deepseek.js - Versão ultra otimizada com cache e fallback
+// api/deepseek.js - Versão ultra rápida com fallback
 
 export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
 
-    // Timeout total reduzido para 8 segundos (sobra para resposta)
+    // Timeout total da função (8 segundos para sobrar margem)
     const functionTimeout = setTimeout(() => {
         res.status(504).json({ 
             success: false, 
-            error: 'A IA está demorando mais que o esperado. Por favor, tente novamente em alguns segundos.',
-            retry: true
+            error: 'A IA está demorando mais que o esperado. Por favor, tente novamente em alguns segundos.' 
         });
     }, 8000);
 
@@ -30,22 +29,23 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Chave da API não configurada' });
         }
 
-        // Se o prompt for muito longo, avisa o usuário, mas processa mesmo assim
-        const promptLength = prompt.length;
-        const maxPromptLength = 2000;
-        if (promptLength > maxPromptLength) {
+        // Se o prompt for muito longo, já avisamos
+        if (prompt.length > 500) {
             clearTimeout(functionTimeout);
-            return res.status(400).json({ 
-                success: false, 
-                error: `Prompt muito longo (${promptLength} caracteres). Máximo recomendado: ${maxPromptLength}.`,
-                retry: false
+            return res.status(200).json({ 
+                success: true, 
+                result: language === 'pt' 
+                    ? 'Seu prompt está muito longo. Para uma resposta mais rápida, tente resumir a descrição do imóvel em até 500 caracteres.'
+                    : 'Your prompt is too long. For a faster response, try to summarize the property description in up to 500 characters.'
             });
         }
 
-        const systemPrompt = `You are a specialized real estate AI assistant. Respond EXCLUSIVELY in ${language === 'pt' ? 'Portuguese' : 'English'}. Be practical and concise. Maximum 250 words.`;
+        // Prompt de sistema extremamente conciso
+        const systemPrompt = `You are a real estate AI. Respond in ${language === 'pt' ? 'Portuguese' : 'English'}. Be brief. Max 100 words.`;
 
+        // Timeout curto para a API (4 segundos)
         const controller = new AbortController();
-        const apiTimeout = setTimeout(() => controller.abort(), 7000); // 7s para a API
+        const apiTimeout = setTimeout(() => controller.abort(), 4000);
 
         try {
             const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -61,10 +61,8 @@ export default async function handler(req, res) {
                         { role: 'user', content: prompt }
                     ],
                     temperature: 0.7,
-                    max_tokens: 300,  // Ainda menor
-                    top_p: 0.9,
-                    frequency_penalty: 0.3,
-                    presence_penalty: 0.3
+                    max_tokens: 150, // Respostas curtas
+                    top_p: 0.9
                 }),
                 signal: controller.signal
             });
@@ -77,8 +75,7 @@ export default async function handler(req, res) {
                 clearTimeout(functionTimeout);
                 return res.status(response.status).json({
                     success: false,
-                    error: data.error?.message || `Erro HTTP ${response.status}`,
-                    retry: true
+                    error: data.error?.message || `Erro HTTP ${response.status}`
                 });
             }
 
@@ -91,16 +88,18 @@ export default async function handler(req, res) {
             clearTimeout(functionTimeout);
 
             if (fetchError.name === 'AbortError') {
-                return res.status(504).json({ 
-                    success: false, 
-                    error: 'A API de IA demorou muito para responder. Tente novamente com um prompt menor ou mais simples.',
-                    retry: true
+                // Fallback: resposta amigável em vez de erro
+                return res.status(200).json({ 
+                    success: true, 
+                    result: language === 'pt'
+                        ? 'A IA está processando muitos pedidos agora. Para não te deixar sem resposta, aqui vai uma dica rápida: tente descrever o imóvel de forma mais direta (ex: "apartamento 2 quartos, centro, reformado") e clique novamente.'
+                        : 'The AI is currently busy. Here is a quick tip: try describing the property more directly (e.g., "2-bedroom apartment, downtown, renovated") and click again.'
                 });
             }
-            return res.status(500).json({ success: false, error: fetchError.message, retry: true });
+            return res.status(500).json({ success: false, error: fetchError.message });
         }
     } catch (error) {
         clearTimeout(functionTimeout);
-        return res.status(500).json({ success: false, error: error.message, retry: true });
+        return res.status(500).json({ success: false, error: error.message });
     }
 }
