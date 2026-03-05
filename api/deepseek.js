@@ -1,26 +1,24 @@
-// api/deepseek.js
-// Função serverless com controle de timeout e resposta otimizada
+// api/deepseek.js - Versão com timeout controlado e resposta rápida
 
 export default async function handler(req, res) {
-    // Força cabeçalho JSON
+    // Garantir resposta JSON
     res.setHeader('Content-Type', 'application/json');
 
-    // Timeout global da função (8 segundos para sobrar tempo para a resposta)
+    // Timeout total da função (9 segundos para sobrar margem)
     const functionTimeout = setTimeout(() => {
         res.status(504).json({ 
             success: false, 
-            error: 'Tempo limite da função excedido. Por favor, tente novamente com um prompt menor.' 
+            error: 'Tempo limite excedido. A IA demorou muito para responder. Tente novamente com um prompt mais curto.' 
         });
-    }, 8000);
+    }, 9000);
 
     try {
-        // Apenas POST
         if (req.method !== 'POST') {
             clearTimeout(functionTimeout);
             return res.status(405).json({ error: 'Método não permitido' });
         }
 
-        const { prompt, language, tool } = req.body;
+        const { prompt, language } = req.body;
         if (!prompt) {
             clearTimeout(functionTimeout);
             return res.status(400).json({ error: 'Prompt é obrigatório' });
@@ -32,15 +30,12 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Chave da API não configurada' });
         }
 
-        // Prompt de sistema com idioma e instruções para respostas concisas
-        const systemPrompt = `You are a specialized real estate AI assistant. ` +
-            `Provide detailed, professional, and accurate responses for real estate agents. ` +
-            `Respond EXCLUSIVELY in the language: ${language === 'pt' ? 'Portuguese' : 'English'}. ` +
-            `Keep responses clear and structured. Maximum 500 words.`;
+        // Prompt de sistema conciso e direto
+        const systemPrompt = `You are a real estate AI assistant. Respond EXCLUSIVELY in ${language === 'pt' ? 'Portuguese' : 'English'}. Be practical and concise. Maximum 300 words.`;
 
-        // AbortController para timeout na chamada à API DeepSeek
+        // Timeout para a chamada externa (7 segundos)
         const controller = new AbortController();
-        const apiTimeout = setTimeout(() => controller.abort(), 7000); // 7s para a API
+        const apiTimeout = setTimeout(() => controller.abort(), 7000);
 
         try {
             const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -56,17 +51,17 @@ export default async function handler(req, res) {
                         { role: 'user', content: prompt }
                     ],
                     temperature: 0.7,
-                    max_tokens: 1000 // Reduzido para acelerar resposta
+                    max_tokens: 500,  // Limite reduzido para acelerar
+                    top_p: 0.9
                 }),
                 signal: controller.signal
             });
 
-            clearTimeout(apiTimeout); // Cancelar timeout da API
+            clearTimeout(apiTimeout);
 
             const data = await response.json();
 
             if (!response.ok) {
-                console.error('Erro da API DeepSeek:', data);
                 clearTimeout(functionTimeout);
                 return res.status(response.status).json({
                     success: false,
@@ -80,19 +75,17 @@ export default async function handler(req, res) {
 
         } catch (fetchError) {
             clearTimeout(apiTimeout);
-            console.error('Erro na chamada fetch:', fetchError);
             clearTimeout(functionTimeout);
-            
+
             if (fetchError.name === 'AbortError') {
                 return res.status(504).json({ 
                     success: false, 
-                    error: 'A API demorou muito para responder. Tente novamente com um prompt menor.' 
+                    error: 'A API de IA demorou muito para responder. Tente novamente com um prompt menor.' 
                 });
             }
             return res.status(500).json({ success: false, error: fetchError.message });
         }
     } catch (error) {
-        console.error('Erro geral na função:', error);
         clearTimeout(functionTimeout);
         return res.status(500).json({ success: false, error: error.message });
     }
