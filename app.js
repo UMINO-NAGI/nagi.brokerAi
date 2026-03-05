@@ -1,12 +1,12 @@
 // ============================================
-// NAGI BROKER AI - Frontend Principal
+// NAGI BROKER AI - Frontend Principal (CORRIGIDO)
 // ============================================
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 
-// Configuração Firebase
+// Configuração do Firebase (do arquivo integrações.txt)
 const firebaseConfig = {
     apiKey: "AIzaSyCsGNZ5JyzagqwEEYjkOu9Ch6U0QRf6stc",
     authDomain: "nagibrokerai-107b0.firebaseapp.com",
@@ -17,6 +17,7 @@ const firebaseConfig = {
     measurementId: "G-FRN86VXEPC"
 };
 
+// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -29,97 +30,87 @@ let currentLanguage = 'pt';
 
 const translations = {
     pt: {
-        login: "Entrar com Google",
+        login: "Login com Google",
         logout: "Sair",
-        pricing_title: "Escolha seu plano premium",
+        pricing_title: "Escolha o plano ideal",
         pricing_subtitle: "Acesso ilimitado a todas as ferramentas de IA",
-        plan_month: "Plano Mensal",
-        plan_3months: "Plano Trimestral",
-        plan_year: "Plano Anual",
+        plan_month: "1 Mês",
+        plan_3months: "3 Meses",
+        plan_year: "1 Ano",
         price_month: "$19.99",
         price_3months: "$49.99",
         price_year: "$199.00",
         per_month: "/mês",
         per_3months: "/trimestre",
         per_year: "/ano",
-        features: [
-            "✓ Todas as 8 ferramentas de IA",
-            "✓ Suporte prioritário",
-            "✓ Atualizações gratuitas",
-            "✓ Sem limites de uso"
-        ],
-        dashboard_title: "Dashboard - Ferramentas de IA",
-        tool1: "🏠 Gerador de Anúncios Imobiliários",
-        tool1_placeholder: "Descreva o imóvel em detalhes (local, área, quartos, diferenciais, público-alvo)...",
-        tool2: "🌎 Tradutor Técnico Imobiliário",
-        tool2_placeholder: "Cole o texto ou termos para tradução (contratos, descrições técnicas)...",
-        tool3: "💪 Quebrador de Objeções",
-        tool3_placeholder: "Digite a objeção do cliente (ex: 'está muito caro', 'vou pensar mais')...",
-        tool4: "🎬 Roteiros para Vídeos (Reels/TikTok)",
-        tool4_placeholder: "Descreva o imóvel e o estilo de vídeo desejado (tour, storytelling, dicas)...",
-        tool5: "📢 Criador de Campanhas (Ads Copy)",
-        tool5_placeholder: "Informe o perfil do imóvel, público-alvo e objetivo da campanha...",
-        tool6: "✉️ Sequência de E-mails (Follow-up)",
-        tool6_placeholder: "Descreva o lead e o contexto do último contato...",
-        tool7: "📄 Simplificador de Contratos",
-        tool7_placeholder: "Cole a cláusula complexa do contrato para simplificar...",
-        tool8: "🪑 Sugestão de Home Staging",
-        tool8_placeholder: "Descreva o cômodo vazio (tamanho, iluminação, estilo desejado)...",
-        generate: "Gerar Conteúdo",
-        output: "Resultado:",
+        features: ["Todas as 8 ferramentas", "Suporte prioritário", "Atualizações gratuitas"],
+        dashboard_title: "Ferramentas de IA",
+        tool1: "Gerador de Anúncios",
+        tool1_placeholder: "Descreva o imóvel (local, características, diferencial)...",
+        tool2: "Tradutor Técnico Imobiliário",
+        tool2_placeholder: "Cole o texto ou termos a traduzir...",
+        tool3: "Quebrador de Objeções",
+        tool3_placeholder: "Digite a objeção do cliente...",
+        tool4: "Roteiros de Vídeo (Reels/TikTok)",
+        tool4_placeholder: "Descreva o imóvel e o que quer destacar...",
+        tool5: "Criador de Campanhas (Ads Copy)",
+        tool5_placeholder: "Perfil do imóvel e público-alvo...",
+        tool6: "Sequência de E-mails (Follow-up)",
+        tool6_placeholder: "Contexto do lead e último contato...",
+        tool7: "Simplificador de Contratos",
+        tool7_placeholder: "Cole a cláusula complexa...",
+        tool8: "Sugestão de Home Staging",
+        tool8_placeholder: "Descreva o cômodo vazio...",
+        generate: "Gerar",
+        output: "Resposta:",
         loading: "Processando...",
-        error_prefix: "Erro",
-        try_again: "Por favor, tente novamente",
-        premium_required: "Área exclusiva para assinantes. Assine um plano para acessar."
+        not_premium: "Você precisa de um plano premium para acessar o dashboard.",
+        buy_now: "Assinar",
+        error_invalid_response: "Erro: resposta inválida do servidor. Por favor, tente novamente.",
     },
     en: {
         login: "Login with Google",
         logout: "Logout",
-        pricing_title: "Choose your premium plan",
+        pricing_title: "Choose your plan",
         pricing_subtitle: "Unlimited access to all AI tools",
-        plan_month: "Monthly Plan",
-        plan_3months: "Quarterly Plan",
-        plan_year: "Yearly Plan",
+        plan_month: "1 Month",
+        plan_3months: "3 Months",
+        plan_year: "1 Year",
         price_month: "$19.99",
         price_3months: "$49.99",
         price_year: "$199.00",
         per_month: "/month",
         per_3months: "/quarter",
         per_year: "/year",
-        features: [
-            "✓ All 8 AI tools",
-            "✓ Priority support",
-            "✓ Free updates",
-            "✓ Unlimited usage"
-        ],
-        dashboard_title: "Dashboard - AI Tools",
-        tool1: "🏠 Real Estate Ad Generator",
-        tool1_placeholder: "Describe the property in detail (location, size, bedrooms, features, target audience)...",
-        tool2: "🌎 Real Estate Technical Translator",
-        tool2_placeholder: "Paste text or terms to translate (contracts, technical descriptions)...",
-        tool3: "💪 Objection Crusher",
-        tool3_placeholder: "Enter the client's objection (e.g., 'too expensive', 'I'll think about it')...",
-        tool4: "🎬 Video Scripts (Reels/TikTok)",
-        tool4_placeholder: "Describe the property and desired video style (tour, storytelling, tips)...",
-        tool5: "📢 Campaign Creator (Ads Copy)",
-        tool5_placeholder: "Provide property profile, target audience and campaign objective...",
-        tool6: "✉️ Email Sequence (Follow-up)",
-        tool6_placeholder: "Describe the lead and last contact context...",
-        tool7: "📄 Contract Simplifier",
-        tool7_placeholder: "Paste the complex contract clause to simplify...",
-        tool8: "🪑 Home Staging Suggestions",
-        tool8_placeholder: "Describe the empty room (size, lighting, desired style)...",
+        features: ["All 8 tools", "Priority support", "Free updates"],
+        dashboard_title: "AI Tools",
+        tool1: "Ad Generator",
+        tool1_placeholder: "Describe the property (location, features, unique points)...",
+        tool2: "Real Estate Technical Translator",
+        tool2_placeholder: "Paste text or terms to translate...",
+        tool3: "Objection Crusher",
+        tool3_placeholder: "Enter the client's objection...",
+        tool4: "Video Scripts (Reels/TikTok)",
+        tool4_placeholder: "Describe the property and what to highlight...",
+        tool5: "Campaign Creator (Ads Copy)",
+        tool5_placeholder: "Property profile and target audience...",
+        tool6: "Email Sequence (Follow-up)",
+        tool6_placeholder: "Lead context and last contact...",
+        tool7: "Contract Simplifier",
+        tool7_placeholder: "Paste the complex clause...",
+        tool8: "Home Staging Suggestions",
+        tool8_placeholder: "Describe the empty room...",
         generate: "Generate",
-        output: "Result:",
+        output: "Response:",
         loading: "Processing...",
-        error_prefix: "Error",
-        try_again: "Please try again",
-        premium_required: "Exclusive area for subscribers. Subscribe to a plan to access."
+        not_premium: "You need a premium plan to access the dashboard.",
+        buy_now: "Subscribe",
+        error_invalid_response: "Error: invalid server response. Please try again.",
     }
 };
 
 // ============================================
-// Elementos DOM
+// Elementos do DOM
 // ============================================
 const mainContent = document.getElementById('main-content');
 const googleLoginBtn = document.getElementById('google-login');
@@ -129,7 +120,6 @@ const logoutBtn = document.getElementById('logout-btn');
 const langPT = document.getElementById('lang-pt');
 const langEN = document.getElementById('lang-en');
 
-// Estado
 let currentUser = null;
 let isPremium = false;
 
@@ -140,9 +130,9 @@ function t(key) {
     return translations[currentLanguage][key] || key;
 }
 
-function showError(message) {
-    console.error(message);
-    alert(message);
+function updateStaticTexts() {
+    googleLoginBtn.textContent = t('login');
+    logoutBtn.textContent = t('logout');
 }
 
 // ============================================
@@ -170,11 +160,6 @@ function setLanguage(lang) {
     }
 }
 
-function updateStaticTexts() {
-    googleLoginBtn.textContent = t('login');
-    logoutBtn.textContent = t('logout');
-}
-
 // ============================================
 // Firebase Auth
 // ============================================
@@ -182,7 +167,8 @@ googleLoginBtn.addEventListener('click', async () => {
     try {
         await signInWithPopup(auth, provider);
     } catch (error) {
-        showError('Erro no login: ' + error.message);
+        console.error('Erro no login:', error);
+        alert('Falha no login: ' + error.message);
     }
 });
 
@@ -190,67 +176,56 @@ logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
     } catch (error) {
-        showError('Erro ao sair: ' + error.message);
+        console.error('Erro no logout:', error);
     }
 });
 
 async function ensureUserDocument(user) {
-    try {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-            await setDoc(userRef, {
-                email: user.email,
-                createdAt: Timestamp.now(),
-                premiumUntil: null
-            });
-            console.log('Documento criado para:', user.uid);
-        }
-    } catch (error) {
-        console.error('Erro ao criar documento:', error);
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+        await setDoc(userRef, {
+            email: user.email,
+            createdAt: Timestamp.now(),
+            premiumUntil: null
+        });
+        console.log('Documento do usuário criado:', user.uid);
     }
 }
 
 async function checkPremiumAndRender() {
     if (!currentUser) return;
 
-    try {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
+    const userRef = doc(db, 'users', currentUser.uid);
+    const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-            const data = userSnap.data();
-            let premiumUntil = null;
-
-            if (data.premiumUntil) {
-                if (data.premiumUntil instanceof Timestamp) {
-                    premiumUntil = data.premiumUntil.toDate();
-                } else if (typeof data.premiumUntil === 'string') {
-                    premiumUntil = new Date(data.premiumUntil);
-                } else if (data.premiumUntil?.seconds) {
-                    premiumUntil = new Date(data.premiumUntil.seconds * 1000);
-                }
+    if (userSnap.exists()) {
+        const data = userSnap.data();
+        let premiumUntil = null;
+        if (data.premiumUntil) {
+            if (data.premiumUntil instanceof Timestamp) {
+                premiumUntil = data.premiumUntil.toDate();
+            } else if (typeof data.premiumUntil === 'string') {
+                premiumUntil = new Date(data.premiumUntil);
+            } else if (data.premiumUntil?.seconds) {
+                premiumUntil = new Date(data.premiumUntil.seconds * 1000);
             }
-
-            isPremium = premiumUntil && premiumUntil > new Date();
-            console.log('Premium:', isPremium, premiumUntil);
-        } else {
-            isPremium = false;
         }
+        isPremium = premiumUntil && premiumUntil > new Date();
+        console.log('Premium:', isPremium, 'Expira:', premiumUntil);
+    } else {
+        isPremium = false;
+    }
 
-        if (isPremium) {
-            renderDashboard();
-        } else {
-            renderPricing();
-        }
-    } catch (error) {
-        console.error('Erro ao verificar premium:', error);
+    if (isPremium) {
+        renderDashboard();
+    } else {
         renderPricing();
     }
 }
 
 // ============================================
-// Renderização de Planos
+// Renderização dos Planos (Pricing)
 // ============================================
 function renderPricing() {
     mainContent.innerHTML = `
@@ -258,25 +233,25 @@ function renderPricing() {
             <h1 class="pricing-title">${t('pricing_title')}</h1>
             <p class="pricing-subtitle">${t('pricing_subtitle')}</p>
             <div class="pricing-grid">
-                <div class="pricing-card">
+                <div class="pricing-card" data-plan="19.99">
                     <h3>${t('plan_month')}</h3>
-                    <div class="price">${t('price_month')}<span>${t('per_month')}</span></div>
+                    <div class="price">${t('price_month')} <span>${t('per_month')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                     <div class="paypal-button-container" id="paypal-button-19.99"></div>
                 </div>
-                <div class="pricing-card">
+                <div class="pricing-card" data-plan="49.99">
                     <h3>${t('plan_3months')}</h3>
-                    <div class="price">${t('price_3months')}<span>${t('per_3months')}</span></div>
+                    <div class="price">${t('price_3months')} <span>${t('per_3months')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                     <div class="paypal-button-container" id="paypal-button-49.99"></div>
                 </div>
-                <div class="pricing-card">
+                <div class="pricing-card" data-plan="199.00">
                     <h3>${t('plan_year')}</h3>
-                    <div class="price">${t('price_year')}<span>${t('per_year')}</span></div>
+                    <div class="price">${t('price_year')} <span>${t('per_year')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
@@ -285,7 +260,6 @@ function renderPricing() {
             </div>
         </div>
     `;
-
     renderPayPalButtons();
 }
 
@@ -294,19 +268,15 @@ function renderPayPalButtons() {
         console.error('PayPal SDK não carregado');
         return;
     }
-
     const plans = [
         { id: '19.99', amount: '19.99' },
         { id: '49.99', amount: '49.99' },
         { id: '199.00', amount: '199.00' }
     ];
-
     plans.forEach(plan => {
         const container = document.getElementById(`paypal-button-${plan.id}`);
         if (!container) return;
-
         container.innerHTML = '';
-
         paypal.Buttons({
             createOrder: (data, actions) => {
                 return actions.order.create({
@@ -316,7 +286,7 @@ function renderPayPalButtons() {
                 });
             },
             onApprove: async (data, actions) => {
-                container.innerHTML = '<p style="color:#2563eb;">Processando pagamento...</p>';
+                container.innerHTML = '<p>Processando...</p>';
                 try {
                     const response = await fetch('/api/verify-payment', {
                         method: 'POST',
@@ -327,80 +297,85 @@ function renderPayPalButtons() {
                             userUID: currentUser?.uid
                         })
                     });
-
                     const result = await response.json();
-
                     if (result.success) {
-                        alert('✅ Pagamento confirmado! Seu acesso premium foi ativado.');
+                        alert('Pagamento confirmado! Acesso premium ativado.');
                         await checkPremiumAndRender();
                     } else {
-                        alert('❌ Falha na verificação: ' + (result.error || 'Erro desconhecido'));
+                        alert('Falha na verificação: ' + (result.error || 'Erro desconhecido'));
                         renderPayPalButtons();
                     }
                 } catch (error) {
-                    alert('Erro ao processar pagamento: ' + error.message);
+                    alert('Erro ao verificar pagamento: ' + error.message);
                     renderPayPalButtons();
                 }
             },
             onError: (err) => {
                 console.error('Erro PayPal:', err);
-                alert('Erro no PayPal. Tente novamente.');
-                renderPayPalButtons();
+                alert('Erro no PayPal: ' + err.message);
             }
         }).render(container);
     });
 }
 
 // ============================================
-// Renderização do Dashboard
+// Renderização do Dashboard (Ferramentas)
 // ============================================
 function renderDashboard() {
     mainContent.innerHTML = `
         <div class="dashboard">
             <h2>${t('dashboard_title')}</h2>
             <div class="tools-grid">
+                <!-- Ferramenta 1 -->
                 <div class="tool-card">
                     <h3>${t('tool1')}</h3>
                     <textarea class="tool-textarea" id="tool1-input" placeholder="${t('tool1_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool1-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool1-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 2 -->
                 <div class="tool-card">
                     <h3>${t('tool2')}</h3>
                     <textarea class="tool-textarea" id="tool2-input" placeholder="${t('tool2_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool2-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool2-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 3 -->
                 <div class="tool-card">
                     <h3>${t('tool3')}</h3>
                     <textarea class="tool-textarea" id="tool3-input" placeholder="${t('tool3_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool3-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool3-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 4 -->
                 <div class="tool-card">
                     <h3>${t('tool4')}</h3>
                     <textarea class="tool-textarea" id="tool4-input" placeholder="${t('tool4_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool4-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool4-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 5 -->
                 <div class="tool-card">
                     <h3>${t('tool5')}</h3>
                     <textarea class="tool-textarea" id="tool5-input" placeholder="${t('tool5_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool5-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool5-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 6 -->
                 <div class="tool-card">
                     <h3>${t('tool6')}</h3>
                     <textarea class="tool-textarea" id="tool6-input" placeholder="${t('tool6_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool6-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool6-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 7 -->
                 <div class="tool-card">
                     <h3>${t('tool7')}</h3>
                     <textarea class="tool-textarea" id="tool7-input" placeholder="${t('tool7_placeholder')}"></textarea>
                     <button class="tool-btn" id="tool7-btn">${t('generate')}</button>
                     <div class="tool-output" id="tool7-output">${t('output')}</div>
                 </div>
+                <!-- Ferramenta 8 -->
                 <div class="tool-card">
                     <h3>${t('tool8')}</h3>
                     <textarea class="tool-textarea" id="tool8-input" placeholder="${t('tool8_placeholder')}"></textarea>
@@ -410,7 +385,6 @@ function renderDashboard() {
             </div>
         </div>
     `;
-
     attachToolListeners();
 }
 
@@ -427,46 +401,45 @@ async function handleToolClick(toolNumber) {
     const inputEl = document.getElementById(`tool${toolNumber}-input`);
     const outputEl = document.getElementById(`tool${toolNumber}-output`);
     const prompt = inputEl.value.trim();
-
     if (!prompt) {
-        alert('Por favor, insira algum texto para gerar o conteúdo.');
+        alert('Por favor, insira algum texto.');
         return;
     }
 
     outputEl.textContent = t('loading');
-
     try {
         const response = await fetch('/api/deepseek', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 prompt: prompt,
-                language: currentLanguage
+                language: currentLanguage,
+                tool: toolNumber
             })
         });
 
-        // Obter resposta como texto primeiro
+        // Obtém o texto da resposta
         const text = await response.text();
-        console.log('Resposta da API:', text.substring(0, 200) + '...'); // Log parcial
+        console.log(`Resposta bruta da API (tool ${toolNumber}):`, text);
 
-        // Tentar parsear JSON
+        // Tenta converter para JSON
         let data;
         try {
             data = JSON.parse(text);
-        } catch (e) {
-            console.error('Resposta não é JSON:', text);
-            outputEl.textContent = `❌ Erro: resposta inválida do servidor. ${t('try_again')}`;
+        } catch (jsonError) {
+            console.error('Falha ao parsear JSON:', text);
+            outputEl.textContent = t('error_invalid_response');
             return;
         }
 
-        if (data.success && data.result) {
+        if (data.success) {
             outputEl.textContent = data.result;
         } else {
-            outputEl.textContent = `❌ ${t('error_prefix')}: ${data.error || t('try_again')}`;
+            outputEl.textContent = 'Erro: ' + (data.error || 'Resposta inválida');
         }
     } catch (error) {
         console.error('Erro na requisição:', error);
-        outputEl.textContent = `❌ Falha na comunicação: ${error.message}`;
+        outputEl.textContent = 'Falha na requisição: ' + error.message;
     }
 }
 
@@ -484,6 +457,7 @@ onAuthStateChanged(auth, async (user) => {
         await checkPremiumAndRender();
     } else {
         currentUser = null;
+        userNameSpan.textContent = '';
         googleLoginBtn.style.display = 'inline-block';
         userInfoDiv.style.display = 'none';
         renderPricing();
@@ -491,5 +465,4 @@ onAuthStateChanged(auth, async (user) => {
     updateStaticTexts();
 });
 
-// Idioma inicial
 setLanguage('pt');
