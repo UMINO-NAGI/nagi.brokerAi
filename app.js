@@ -1,5 +1,5 @@
 // ============================================
-// NAGI BROKER AI - Frontend Principal (CORRIGIDO)
+// NAGI BROKER AI - Frontend Principal (FINAL)
 // ============================================
 
 import { initializeApp } from 'firebase/app';
@@ -66,7 +66,8 @@ const translations = {
         loading: "Processando...",
         not_premium: "Você precisa de um plano premium para acessar o dashboard.",
         buy_now: "Assinar",
-        error_invalid_response: "Erro: resposta inválida do servidor. Por favor, tente novamente.",
+        error_timeout: "Tempo limite excedido. A IA demorou muito para responder. Tente novamente com um prompt mais curto.",
+        error_invalid_response: "Erro: resposta inválida do servidor. Por favor, tente novamente."
     },
     en: {
         login: "Login with Google",
@@ -105,7 +106,8 @@ const translations = {
         loading: "Processing...",
         not_premium: "You need a premium plan to access the dashboard.",
         buy_now: "Subscribe",
-        error_invalid_response: "Error: invalid server response. Please try again.",
+        error_timeout: "Timeout exceeded. The AI took too long to respond. Please try again with a shorter prompt.",
+        error_invalid_response: "Error: invalid server response. Please try again."
     }
 };
 
@@ -418,11 +420,9 @@ async function handleToolClick(toolNumber) {
             })
         });
 
-        // Obtém o texto da resposta
         const text = await response.text();
         console.log(`Resposta bruta da API (tool ${toolNumber}):`, text);
 
-        // Tenta converter para JSON
         let data;
         try {
             data = JSON.parse(text);

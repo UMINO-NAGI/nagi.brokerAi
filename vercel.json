@@ -1,10 +1,10 @@
 {
     "functions": {
         "api/deepseek.js": {
-            "maxDuration": 30
+            "maxDuration": 10
         },
         "api/verify-payment.js": {
-            "maxDuration": 30
+            "maxDuration": 10
         }
     }
 }
