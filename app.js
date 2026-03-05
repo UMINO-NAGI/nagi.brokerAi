@@ -1,13 +1,12 @@
 // ============================================
 // NAGI BROKER AI - Frontend Principal
-// Versão: 2.0 - Produção
 // ============================================
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 
-// Configuração do Firebase (do arquivo integrações.txt)
+// Configuração Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyCsGNZ5JyzagqwEEYjkOu9Ch6U0QRf6stc",
     authDomain: "nagibrokerai-107b0.firebaseapp.com",
@@ -18,14 +17,13 @@ const firebaseConfig = {
     measurementId: "G-FRN86VXEPC"
 };
 
-// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // ============================================
-// INTERNACIONALIZAÇÃO (PT/EN)
+// Internacionalização
 // ============================================
 let currentLanguage = 'pt';
 
@@ -33,11 +31,11 @@ const translations = {
     pt: {
         login: "Entrar com Google",
         logout: "Sair",
-        pricing_title: "Escolha seu plano",
+        pricing_title: "Escolha seu plano premium",
         pricing_subtitle: "Acesso ilimitado a todas as ferramentas de IA",
-        plan_month: "1 Mês",
-        plan_3months: "3 Meses",
-        plan_year: "1 Ano",
+        plan_month: "Plano Mensal",
+        plan_3months: "Plano Trimestral",
+        plan_year: "Plano Anual",
         price_month: "$19.99",
         price_3months: "$49.99",
         price_year: "$199.00",
@@ -45,44 +43,43 @@ const translations = {
         per_3months: "/trimestre",
         per_year: "/ano",
         features: [
-            "✓ 8 ferramentas especializadas",
+            "✓ Todas as 8 ferramentas de IA",
             "✓ Suporte prioritário",
-            "✓ Atualizações mensais",
+            "✓ Atualizações gratuitas",
             "✓ Sem limites de uso"
         ],
-        dashboard_title: "Dashboard Premium",
-        premium_badge: "ASSINANTE PREMIUM",
-        tool1: "Gerador de Anúncios",
-        tool1_placeholder: "Descreva o imóvel (local, área, quartos, diferenciais, público-alvo)...",
-        tool2: "Tradutor Técnico Imobiliário",
-        tool2_placeholder: "Cole o texto ou termos técnicos para tradução (inglês/português)...",
-        tool3: "Quebrador de Objeções",
+        dashboard_title: "Dashboard - Ferramentas de IA",
+        tool1: "🏠 Gerador de Anúncios Imobiliários",
+        tool1_placeholder: "Descreva o imóvel em detalhes (local, área, quartos, diferenciais, público-alvo)...",
+        tool2: "🌎 Tradutor Técnico Imobiliário",
+        tool2_placeholder: "Cole o texto ou termos para tradução (contratos, descrições técnicas)...",
+        tool3: "💪 Quebrador de Objeções",
         tool3_placeholder: "Digite a objeção do cliente (ex: 'está muito caro', 'vou pensar mais')...",
-        tool4: "Roteiros de Vídeo (Reels/TikTok)",
-        tool4_placeholder: "Descreva o imóvel e o que quer destacar (cômodos, vista, localização)...",
-        tool5: "Criador de Campanhas (Ads Copy)",
-        tool5_placeholder: "Perfil do imóvel e público-alvo (ex: apartamento de luxo, casal sem filhos)...",
-        tool6: "Sequência de E-mails (Follow-up)",
-        tool6_placeholder: "Contexto do lead e último contato (ex: visitou imóvel há 3 dias)...",
-        tool7: "Simplificador de Contratos",
-        tool7_placeholder: "Cole a cláusula complexa do contrato...",
-        tool8: "Sugestão de Home Staging",
-        tool8_placeholder: "Descreva o cômodo vazio (tamanho, cores, móveis existentes)...",
+        tool4: "🎬 Roteiros para Vídeos (Reels/TikTok)",
+        tool4_placeholder: "Descreva o imóvel e o estilo de vídeo desejado (tour, storytelling, dicas)...",
+        tool5: "📢 Criador de Campanhas (Ads Copy)",
+        tool5_placeholder: "Informe o perfil do imóvel, público-alvo e objetivo da campanha...",
+        tool6: "✉️ Sequência de E-mails (Follow-up)",
+        tool6_placeholder: "Descreva o lead e o contexto do último contato...",
+        tool7: "📄 Simplificador de Contratos",
+        tool7_placeholder: "Cole a cláusula complexa do contrato para simplificar...",
+        tool8: "🪑 Sugestão de Home Staging",
+        tool8_placeholder: "Descreva o cômodo vazio (tamanho, iluminação, estilo desejado)...",
         generate: "Gerar Conteúdo",
-        generating: "Processando...",
         output: "Resultado:",
-        error_generic: "Erro ao processar. Tente novamente.",
-        not_premium: "Você precisa de um plano premium para acessar o dashboard.",
-        buy_now: "Assinar Agora",
+        loading: "Processando...",
+        error_prefix: "Erro",
+        try_again: "Por favor, tente novamente",
+        premium_required: "Área exclusiva para assinantes. Assine um plano para acessar."
     },
     en: {
         login: "Login with Google",
         logout: "Logout",
-        pricing_title: "Choose your plan",
+        pricing_title: "Choose your premium plan",
         pricing_subtitle: "Unlimited access to all AI tools",
-        plan_month: "1 Month",
-        plan_3months: "3 Months",
-        plan_year: "1 Year",
+        plan_month: "Monthly Plan",
+        plan_3months: "Quarterly Plan",
+        plan_year: "Yearly Plan",
         price_month: "$19.99",
         price_3months: "$49.99",
         price_year: "$199.00",
@@ -90,40 +87,39 @@ const translations = {
         per_3months: "/quarter",
         per_year: "/year",
         features: [
-            "✓ 8 specialized tools",
+            "✓ All 8 AI tools",
             "✓ Priority support",
-            "✓ Monthly updates",
+            "✓ Free updates",
             "✓ Unlimited usage"
         ],
-        dashboard_title: "Premium Dashboard",
-        premium_badge: "PREMIUM MEMBER",
-        tool1: "Ad Generator",
-        tool1_placeholder: "Describe the property (location, area, rooms, highlights, target audience)...",
-        tool2: "Real Estate Technical Translator",
-        tool2_placeholder: "Paste technical text or terms to translate (English/Portuguese)...",
-        tool3: "Objection Crusher",
+        dashboard_title: "Dashboard - AI Tools",
+        tool1: "🏠 Real Estate Ad Generator",
+        tool1_placeholder: "Describe the property in detail (location, size, bedrooms, features, target audience)...",
+        tool2: "🌎 Real Estate Technical Translator",
+        tool2_placeholder: "Paste text or terms to translate (contracts, technical descriptions)...",
+        tool3: "💪 Objection Crusher",
         tool3_placeholder: "Enter the client's objection (e.g., 'too expensive', 'I'll think about it')...",
-        tool4: "Video Scripts (Reels/TikTok)",
-        tool4_placeholder: "Describe the property and what to highlight (rooms, view, location)...",
-        tool5: "Campaign Creator (Ads Copy)",
-        tool5_placeholder: "Property profile and target audience (e.g., luxury apartment, couple without children)...",
-        tool6: "Email Sequence (Follow-up)",
-        tool6_placeholder: "Lead context and last contact (e.g., visited property 3 days ago)...",
-        tool7: "Contract Simplifier",
-        tool7_placeholder: "Paste the complex contract clause...",
-        tool8: "Home Staging Suggestions",
-        tool8_placeholder: "Describe the empty room (size, colors, existing furniture)...",
-        generate: "Generate Content",
-        generating: "Processing...",
+        tool4: "🎬 Video Scripts (Reels/TikTok)",
+        tool4_placeholder: "Describe the property and desired video style (tour, storytelling, tips)...",
+        tool5: "📢 Campaign Creator (Ads Copy)",
+        tool5_placeholder: "Provide property profile, target audience and campaign objective...",
+        tool6: "✉️ Email Sequence (Follow-up)",
+        tool6_placeholder: "Describe the lead and last contact context...",
+        tool7: "📄 Contract Simplifier",
+        tool7_placeholder: "Paste the complex contract clause to simplify...",
+        tool8: "🪑 Home Staging Suggestions",
+        tool8_placeholder: "Describe the empty room (size, lighting, desired style)...",
+        generate: "Generate",
         output: "Result:",
-        error_generic: "Error processing. Please try again.",
-        not_premium: "You need a premium plan to access the dashboard.",
-        buy_now: "Subscribe Now",
+        loading: "Processing...",
+        error_prefix: "Error",
+        try_again: "Please try again",
+        premium_required: "Exclusive area for subscribers. Subscribe to a plan to access."
     }
 };
 
 // ============================================
-// ELEMENTOS DO DOM
+// Elementos DOM
 // ============================================
 const mainContent = document.getElementById('main-content');
 const googleLoginBtn = document.getElementById('google-login');
@@ -133,24 +129,24 @@ const logoutBtn = document.getElementById('logout-btn');
 const langPT = document.getElementById('lang-pt');
 const langEN = document.getElementById('lang-en');
 
-// Estado global
+// Estado
 let currentUser = null;
 let isPremium = false;
 
 // ============================================
-// UTILITÁRIOS
+// Utilitários
 // ============================================
 function t(key) {
     return translations[currentLanguage][key] || key;
 }
 
-function updateStaticTexts() {
-    googleLoginBtn.textContent = t('login');
-    logoutBtn.textContent = t('logout');
+function showError(message) {
+    console.error(message);
+    alert(message);
 }
 
 // ============================================
-// GERENCIAMENTO DE IDIOMA
+// Gerenciamento de Idioma
 // ============================================
 langPT.addEventListener('click', () => {
     setLanguage('pt');
@@ -174,15 +170,19 @@ function setLanguage(lang) {
     }
 }
 
+function updateStaticTexts() {
+    googleLoginBtn.textContent = t('login');
+    logoutBtn.textContent = t('logout');
+}
+
 // ============================================
-// FIREBASE AUTH
+// Firebase Auth
 // ============================================
 googleLoginBtn.addEventListener('click', async () => {
     try {
         await signInWithPopup(auth, provider);
     } catch (error) {
-        console.error('Erro no login:', error);
-        alert('Falha no login: ' + error.message);
+        showError('Erro no login: ' + error.message);
     }
 });
 
@@ -190,60 +190,67 @@ logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
     } catch (error) {
-        console.error('Erro no logout:', error);
+        showError('Erro ao sair: ' + error.message);
     }
 });
 
-// Garante que o documento do usuário existe no Firestore
 async function ensureUserDocument(user) {
-    const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-        await setDoc(userRef, {
-            email: user.email,
-            createdAt: Timestamp.now(),
-            premiumUntil: null
-        });
-        console.log('📝 Documento criado para:', user.email);
+    try {
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+            await setDoc(userRef, {
+                email: user.email,
+                createdAt: Timestamp.now(),
+                premiumUntil: null
+            });
+            console.log('Documento criado para:', user.uid);
+        }
+    } catch (error) {
+        console.error('Erro ao criar documento:', error);
     }
 }
 
-// Verifica status premium
 async function checkPremiumAndRender() {
     if (!currentUser) return;
 
-    const userRef = doc(db, 'users', currentUser.uid);
-    const userSnap = await getDoc(userRef);
+    try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists()) {
-        const data = userSnap.data();
-        let premiumUntil = null;
-        
-        if (data.premiumUntil) {
-            if (data.premiumUntil instanceof Timestamp) {
-                premiumUntil = data.premiumUntil.toDate();
-            } else if (typeof data.premiumUntil === 'string') {
-                premiumUntil = new Date(data.premiumUntil);
-            } else if (data.premiumUntil?.seconds) {
-                premiumUntil = new Date(data.premiumUntil.seconds * 1000);
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            let premiumUntil = null;
+
+            if (data.premiumUntil) {
+                if (data.premiumUntil instanceof Timestamp) {
+                    premiumUntil = data.premiumUntil.toDate();
+                } else if (typeof data.premiumUntil === 'string') {
+                    premiumUntil = new Date(data.premiumUntil);
+                } else if (data.premiumUntil?.seconds) {
+                    premiumUntil = new Date(data.premiumUntil.seconds * 1000);
+                }
             }
-        }
-        
-        isPremium = premiumUntil && premiumUntil > new Date();
-        console.log('🔑 Status premium:', isPremium, premiumUntil);
-    } else {
-        isPremium = false;
-    }
 
-    if (isPremium) {
-        renderDashboard();
-    } else {
+            isPremium = premiumUntil && premiumUntil > new Date();
+            console.log('Premium:', isPremium, premiumUntil);
+        } else {
+            isPremium = false;
+        }
+
+        if (isPremium) {
+            renderDashboard();
+        } else {
+            renderPricing();
+        }
+    } catch (error) {
+        console.error('Erro ao verificar premium:', error);
         renderPricing();
     }
 }
 
 // ============================================
-// RENDERIZAÇÃO: PLANOS (PRICING)
+// Renderização de Planos
 // ============================================
 function renderPricing() {
     mainContent.innerHTML = `
@@ -253,15 +260,15 @@ function renderPricing() {
             <div class="pricing-grid">
                 <div class="pricing-card">
                     <h3>${t('plan_month')}</h3>
-                    <div class="price">${t('price_month')} <span>${t('per_month')}</span></div>
+                    <div class="price">${t('price_month')}<span>${t('per_month')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                     <div class="paypal-button-container" id="paypal-button-19.99"></div>
                 </div>
-                <div class="pricing-card popular">
+                <div class="pricing-card">
                     <h3>${t('plan_3months')}</h3>
-                    <div class="price">${t('price_3months')} <span>${t('per_3months')}</span></div>
+                    <div class="price">${t('price_3months')}<span>${t('per_3months')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
@@ -269,7 +276,7 @@ function renderPricing() {
                 </div>
                 <div class="pricing-card">
                     <h3>${t('plan_year')}</h3>
-                    <div class="price">${t('price_year')} <span>${t('per_year')}</span></div>
+                    <div class="price">${t('price_year')}<span>${t('per_year')}</span></div>
                     <ul>
                         ${translations[currentLanguage].features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
@@ -278,6 +285,7 @@ function renderPricing() {
             </div>
         </div>
     `;
+
     renderPayPalButtons();
 }
 
@@ -288,17 +296,17 @@ function renderPayPalButtons() {
     }
 
     const plans = [
-        { id: '19.99', amount: '19.99', months: 1 },
-        { id: '49.99', amount: '49.99', months: 3 },
-        { id: '199.00', amount: '199.00', months: 12 }
+        { id: '19.99', amount: '19.99' },
+        { id: '49.99', amount: '49.99' },
+        { id: '199.00', amount: '199.00' }
     ];
 
     plans.forEach(plan => {
         const container = document.getElementById(`paypal-button-${plan.id}`);
         if (!container) return;
-        
-        container.innerHTML = ''; // Limpa para evitar duplicação
-        
+
+        container.innerHTML = '';
+
         paypal.Buttons({
             createOrder: (data, actions) => {
                 return actions.order.create({
@@ -308,7 +316,7 @@ function renderPayPalButtons() {
                 });
             },
             onApprove: async (data, actions) => {
-                container.innerHTML = '<p style="color: var(--primary);">Processando pagamento...</p>';
+                container.innerHTML = '<p style="color:#2563eb;">Processando pagamento...</p>';
                 try {
                     const response = await fetch('/api/verify-payment', {
                         method: 'POST',
@@ -319,9 +327,9 @@ function renderPayPalButtons() {
                             userUID: currentUser?.uid
                         })
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (result.success) {
                         alert('✅ Pagamento confirmado! Seu acesso premium foi ativado.');
                         await checkPremiumAndRender();
@@ -330,61 +338,80 @@ function renderPayPalButtons() {
                         renderPayPalButtons();
                     }
                 } catch (error) {
-                    console.error('Erro na verificação:', error);
-                    alert('Erro ao verificar pagamento: ' + error.message);
+                    alert('Erro ao processar pagamento: ' + error.message);
                     renderPayPalButtons();
                 }
             },
             onError: (err) => {
                 console.error('Erro PayPal:', err);
-                alert('Erro no PayPal: ' + err.message);
+                alert('Erro no PayPal. Tente novamente.');
+                renderPayPalButtons();
             }
         }).render(container);
     });
 }
 
 // ============================================
-// RENDERIZAÇÃO: DASHBOARD (FERRAMENTAS)
+// Renderização do Dashboard
 // ============================================
 function renderDashboard() {
     mainContent.innerHTML = `
         <div class="dashboard">
-            <div class="dashboard-header">
-                <h2>${t('dashboard_title')}</h2>
-                <span class="premium-badge">${t('premium_badge')}</span>
-            </div>
+            <h2>${t('dashboard_title')}</h2>
             <div class="tools-grid">
-                ${renderTool(1)}
-                ${renderTool(2)}
-                ${renderTool(3)}
-                ${renderTool(4)}
-                ${renderTool(5)}
-                ${renderTool(6)}
-                ${renderTool(7)}
-                ${renderTool(8)}
+                <div class="tool-card">
+                    <h3>${t('tool1')}</h3>
+                    <textarea class="tool-textarea" id="tool1-input" placeholder="${t('tool1_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool1-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool1-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool2')}</h3>
+                    <textarea class="tool-textarea" id="tool2-input" placeholder="${t('tool2_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool2-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool2-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool3')}</h3>
+                    <textarea class="tool-textarea" id="tool3-input" placeholder="${t('tool3_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool3-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool3-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool4')}</h3>
+                    <textarea class="tool-textarea" id="tool4-input" placeholder="${t('tool4_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool4-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool4-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool5')}</h3>
+                    <textarea class="tool-textarea" id="tool5-input" placeholder="${t('tool5_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool5-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool5-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool6')}</h3>
+                    <textarea class="tool-textarea" id="tool6-input" placeholder="${t('tool6_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool6-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool6-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool7')}</h3>
+                    <textarea class="tool-textarea" id="tool7-input" placeholder="${t('tool7_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool7-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool7-output">${t('output')}</div>
+                </div>
+                <div class="tool-card">
+                    <h3>${t('tool8')}</h3>
+                    <textarea class="tool-textarea" id="tool8-input" placeholder="${t('tool8_placeholder')}"></textarea>
+                    <button class="tool-btn" id="tool8-btn">${t('generate')}</button>
+                    <div class="tool-output" id="tool8-output">${t('output')}</div>
+                </div>
             </div>
         </div>
     `;
-    attachToolListeners();
-}
 
-function renderTool(number) {
-    return `
-        <div class="tool-card" data-tool="${number}">
-            <div class="tool-header">
-                <div class="tool-icon">${number}</div>
-                <h3>${t(`tool${number}`)}</h3>
-            </div>
-            <textarea class="tool-textarea" id="tool${number}-input" 
-                placeholder="${t(`tool${number}_placeholder`)}"></textarea>
-            <button class="tool-btn" id="tool${number}-btn">
-                ${t('generate')}
-            </button>
-            <div class="tool-output" id="tool${number}-output">
-                ${t('output')}
-            </div>
-        </div>
-    `;
+    attachToolListeners();
 }
 
 function attachToolListeners() {
@@ -396,42 +423,17 @@ function attachToolListeners() {
     }
 }
 
-// Prompts específicos para cada ferramenta
-function getSystemPrompt(toolNumber, language) {
-    const lang = language === 'pt' ? 'Portuguese' : 'English';
-    
-    const basePrompt = `You are a specialized real estate AI assistant. Respond EXCLUSIVELY in ${lang}. Be professional, detailed, and practical. `;
-    
-    const toolPrompts = {
-        1: "Generate compelling real estate ads based on the property description. Include a catchy headline, key features, and a call-to-action.",
-        2: "Translate real estate technical terms or documents maintaining legal and professional context. Provide both the translation and brief explanations if needed.",
-        3: "As an objection handling expert, provide 3 persuasive responses to the client's objection. Each response should be psychologically effective and professional.",
-        4: "Create a viral video script for Reels/TikTok showcasing the property. Include scene-by-scene breakdown, camera angles, and suggested narration.",
-        5: "Create optimized ad copy for Facebook/Google Ads. Include headline, primary text, and call-to-action. Consider the target audience described.",
-        6: "Write a follow-up email sequence for a lead who stopped responding. Include 3 emails with subject lines, spaced appropriately.",
-        7: "Simplify complex contract clauses into plain language that clients can understand. Maintain the legal meaning but make it accessible.",
-        8: "Suggest budget-friendly home staging ideas to enhance the property's appeal. Be specific about furniture placement, colors, and accessories."
-    };
-    
-    return basePrompt + (toolPrompts[toolNumber] || "Provide helpful real estate advice.");
-}
-
 async function handleToolClick(toolNumber) {
     const inputEl = document.getElementById(`tool${toolNumber}-input`);
     const outputEl = document.getElementById(`tool${toolNumber}-output`);
-    const btn = document.getElementById(`tool${toolNumber}-btn`);
-    
     const prompt = inputEl.value.trim();
+
     if (!prompt) {
-        alert('Por favor, insira algum texto.');
+        alert('Por favor, insira algum texto para gerar o conteúdo.');
         return;
     }
 
-    // Disable button and show loading
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> ${t('generating')}`;
-    outputEl.textContent = t('generating');
-    outputEl.classList.add('loading');
+    outputEl.textContent = t('loading');
 
     try {
         const response = await fetch('/api/deepseek', {
@@ -439,46 +441,37 @@ async function handleToolClick(toolNumber) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 prompt: prompt,
-                language: currentLanguage,
-                tool: toolNumber,
-                systemPrompt: getSystemPrompt(toolNumber, currentLanguage)
+                language: currentLanguage
             })
         });
 
-        // Get response text
+        // Obter resposta como texto primeiro
         const text = await response.text();
-        console.log(`📦 Resposta bruta da ferramenta ${toolNumber}:`, text.substring(0, 200) + '...');
+        console.log('Resposta da API:', text.substring(0, 200) + '...'); // Log parcial
 
-        // Try to parse JSON
+        // Tentar parsear JSON
         let data;
         try {
             data = JSON.parse(text);
-        } catch (jsonError) {
-            console.error('❌ Resposta não é JSON:', text);
-            outputEl.textContent = 'Erro: resposta inválida do servidor. Por favor, tente novamente.';
-            outputEl.classList.remove('loading');
-            btn.disabled = false;
-            btn.innerHTML = t('generate');
+        } catch (e) {
+            console.error('Resposta não é JSON:', text);
+            outputEl.textContent = `❌ Erro: resposta inválida do servidor. ${t('try_again')}`;
             return;
         }
 
-        if (data.success) {
+        if (data.success && data.result) {
             outputEl.textContent = data.result;
         } else {
-            outputEl.textContent = 'Erro: ' + (data.error || t('error_generic'));
+            outputEl.textContent = `❌ ${t('error_prefix')}: ${data.error || t('try_again')}`;
         }
     } catch (error) {
-        console.error('❌ Erro na requisição:', error);
-        outputEl.textContent = 'Falha na requisição: ' + error.message;
-    } finally {
-        outputEl.classList.remove('loading');
-        btn.disabled = false;
-        btn.innerHTML = t('generate');
+        console.error('Erro na requisição:', error);
+        outputEl.textContent = `❌ Falha na comunicação: ${error.message}`;
     }
 }
 
 // ============================================
-// INICIALIZAÇÃO
+// Inicialização
 // ============================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -486,12 +479,11 @@ onAuthStateChanged(auth, async (user) => {
         userNameSpan.textContent = user.displayName || user.email;
         googleLoginBtn.style.display = 'none';
         userInfoDiv.style.display = 'flex';
-        
+
         await ensureUserDocument(user);
         await checkPremiumAndRender();
     } else {
         currentUser = null;
-        userNameSpan.textContent = '';
         googleLoginBtn.style.display = 'inline-block';
         userInfoDiv.style.display = 'none';
         renderPricing();
@@ -499,5 +491,5 @@ onAuthStateChanged(auth, async (user) => {
     updateStaticTexts();
 });
 
-// Idioma padrão
+// Idioma inicial
 setLanguage('pt');
